@@ -150,11 +150,11 @@ function handleWheelMove(clientX, clientY) {
     const timeDelta = now - lastMoveTime;
     const velocity = timeDelta > 0 ? Math.abs(deltaAngle) / timeDelta : 0;
     
-    // Velocity multiplier: faster rotation = bigger effect (1x to 3x)
-    const velocityMultiplier = 1 + Math.min(velocity * 30, 2);
+    // Velocity multiplier: faster rotation = bigger effect (1x to 10x)
+    const velocityMultiplier = 1 + Math.min(velocity * 80, 9);
     
-    // Base sensitivity: 6 degrees = 1 BPM, multiplied by velocity
-    const tempoDelta = (deltaAngle / 6) * velocityMultiplier;
+    // Base sensitivity: 35 degrees = 1 BPM (slow = very precise), multiplied by velocity
+    const tempoDelta = (deltaAngle / 35) * velocityMultiplier;
     accumulatedTempoDelta += tempoDelta;
     
     // Apply tempo change when we have at least 1 BPM difference
