@@ -6,12 +6,19 @@ let currentTempo = 120;
 let editingTempo = '';
 let isFirstInput = true;
 
-// DOM Elements
-const tempoValueElement = document.querySelector('.tempo-value');
-const tempoOverlay = document.getElementById('tempoOverlay');
-const tempoOverlayValue = document.getElementById('tempoOverlayValue');
-const triggerTempo = document.querySelector('.trigger-tempo');
-const tempoKeys = document.querySelectorAll('.tempo-key');
+// Metronome state
+let isPlaying = false;
+let audioContext = null;
+let schedulerTimerId = null;
+
+// DOM Elements (initialized after DOM ready)
+let tempoValueElement;
+let tempoOverlay;
+let tempoOverlayValue;
+let triggerTempo;
+let tempoKeys;
+let playButton;
+let playButtonIcon;
 
 // Clamp tempo to valid range
 function clampTempo(value) {
@@ -40,6 +47,7 @@ function closeTempoOverlay(save = false) {
     if (save && editingTempo.length > 0) {
         currentTempo = clampTempo(editingTempo);
         updateTempoDisplay(currentTempo);
+        restartMetronome(); // Apply new tempo if playing
     }
     tempoOverlay.classList.remove('active');
     tempoOverlayValue.classList.remove('selected');
@@ -80,33 +88,137 @@ function handleKeyInput(key) {
     }
 }
 
-// Event Listeners
-triggerTempo.addEventListener('click', openTempoOverlay);
+// ============ METRONOME ============
 
-tempoKeys.forEach(key => {
-    key.addEventListener('click', () => {
-        handleKeyInput(key.dataset.key);
-    });
-});
-
-// Close overlay when clicking outside the keyboard
-tempoOverlay.addEventListener('click', (e) => {
-    if (e.target === tempoOverlay || e.target.closest('.tempo-overlay-display')) {
-        closeTempoOverlay(false);
+// Initialize Audio Context (must be called after user interaction)
+function initAudioContext() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
-});
+    if (audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+}
 
-// Handle physical keyboard input when overlay is open
-document.addEventListener('keydown', (e) => {
-    if (!tempoOverlay.classList.contains('active')) return;
+// Create click sound
+function playClick() {
+    initAudioContext();
     
-    if (e.key >= '0' && e.key <= '9') {
-        handleKeyInput(e.key);
-    } else if (e.key === 'Backspace') {
-        handleKeyInput('backspace');
-    } else if (e.key === 'Enter') {
-        handleKeyInput('confirm');
-    } else if (e.key === 'Escape') {
-        closeTempoOverlay(false);
+    const osc = audioContext.createOscillator();
+    const envelope = audioContext.createGain();
+    
+    osc.frequency.value = 1000;
+    envelope.gain.value = 0.5;
+    envelope.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
+    
+    osc.connect(envelope);
+    envelope.connect(audioContext.destination);
+    
+    osc.start(audioContext.currentTime);
+    osc.stop(audioContext.currentTime + 0.05);
+}
+
+// Calculate interval in ms from tempo
+function getIntervalMs() {
+    return (60 / currentTempo) * 1000;
+}
+
+// Start metronome
+function startMetronome() {
+    initAudioContext();
+    isPlaying = true;
+    
+    // Play first click immediately
+    playClick();
+    
+    // Schedule next clicks
+    schedulerTimerId = setInterval(() => {
+        playClick();
+    }, getIntervalMs());
+    
+    if (playButtonIcon) {
+        playButtonIcon.src = 'icons/ic_pause.svg';
+        playButtonIcon.alt = 'Pause';
     }
+}
+
+// Stop metronome
+function stopMetronome() {
+    isPlaying = false;
+    if (schedulerTimerId) {
+        clearInterval(schedulerTimerId);
+        schedulerTimerId = null;
+    }
+    if (playButtonIcon) {
+        playButtonIcon.src = 'icons/ic_play/L.svg';
+        playButtonIcon.alt = 'Play';
+    }
+}
+
+// Restart metronome (to apply new tempo)
+function restartMetronome() {
+    if (isPlaying) {
+        clearInterval(schedulerTimerId);
+        schedulerTimerId = setInterval(() => {
+            playClick();
+        }, getIntervalMs());
+    }
+}
+
+// Toggle metronome
+function toggleMetronome() {
+    if (isPlaying) {
+        stopMetronome();
+    } else {
+        startMetronome();
+    }
+}
+
+// ============ INITIALIZATION ============
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize DOM elements
+    tempoValueElement = document.querySelector('.tempo-value');
+    tempoOverlay = document.getElementById('tempoOverlay');
+    tempoOverlayValue = document.getElementById('tempoOverlayValue');
+    triggerTempo = document.querySelector('.trigger-tempo');
+    tempoKeys = document.querySelectorAll('.tempo-key');
+    playButton = document.getElementById('playButton');
+    playButtonIcon = document.getElementById('playButtonIcon');
+
+    // Play/Pause button
+    if (playButton) {
+        playButton.addEventListener('click', toggleMetronome);
+    }
+
+    // Tempo controls
+    triggerTempo.addEventListener('click', openTempoOverlay);
+
+    tempoKeys.forEach(key => {
+        key.addEventListener('click', () => {
+            handleKeyInput(key.dataset.key);
+        });
+    });
+
+    // Close overlay when clicking outside the keyboard
+    tempoOverlay.addEventListener('click', (e) => {
+        if (e.target === tempoOverlay || e.target.closest('.tempo-overlay-display')) {
+            closeTempoOverlay(false);
+        }
+    });
+
+    // Handle physical keyboard input when overlay is open
+    document.addEventListener('keydown', (e) => {
+        if (!tempoOverlay.classList.contains('active')) return;
+        
+        if (e.key >= '0' && e.key <= '9') {
+            handleKeyInput(e.key);
+        } else if (e.key === 'Backspace') {
+            handleKeyInput('backspace');
+        } else if (e.key === 'Enter') {
+            handleKeyInput('confirm');
+        } else if (e.key === 'Escape') {
+            closeTempoOverlay(false);
+        }
+    });
 });
