@@ -156,6 +156,13 @@ a {
     border-radius: 9999px;
     padding: 12px;
     position: relative;
+    --wheel-rotation: 0deg;
+    touch-action: none; /* Allow custom touch handling */
+    cursor: grab;
+}
+
+.tempo-wheel-indicators:active {
+    cursor: grabbing;
 }
 
 .tempo-wheel-indicators::before {
@@ -167,7 +174,7 @@ a {
     bottom: 0;
     border-radius: 9999px;
     background: repeating-conic-gradient(
-        from 0deg,
+        from var(--wheel-rotation),
         transparent 0deg 0.2deg,
         var(--black-light) 0.4deg 0.8deg,
         transparent 1deg 4deg

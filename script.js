@@ -18,6 +18,13 @@ let lastBeatTime = 0; // When the last beat was played (performance.now())
 let tapTimes = [];
 const TAP_TIMEOUT = 2000; // Reset taps after 2 seconds of inactivity
 
+// Wheel rotation state
+let wheelRotation = 0; // Current visual rotation in degrees
+let isDragging = false;
+let lastAngle = 0;
+let lastMoveTime = 0;
+let accumulatedTempoDelta = 0; // For smooth tempo changes
+
 // DOM Elements (initialized after DOM ready)
 let tempoValueElement;
 let tempoOverlay;
@@ -29,6 +36,7 @@ let playButtonIcon;
 let tempoIncreaseBtn;
 let tempoDecreaseBtn;
 let tapButton;
+let tempoWheel;
 
 // Clamp tempo to valid range
 function clampTempo(value) {
@@ -95,6 +103,76 @@ function handleTap() {
         updateTempoDisplay(currentTempo);
         restartMetronome();
     }
+}
+
+// ============ WHEEL ROTATION ============
+
+// Get angle from center of wheel to a point
+function getAngleFromCenter(element, clientX, clientY) {
+    const rect = element.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    return Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
+}
+
+// Update wheel visual rotation
+function updateWheelRotation() {
+    if (tempoWheel) {
+        tempoWheel.style.setProperty('--wheel-rotation', `${wheelRotation}deg`);
+    }
+}
+
+// Handle wheel drag start
+function handleWheelStart(clientX, clientY) {
+    isDragging = true;
+    lastAngle = getAngleFromCenter(tempoWheel, clientX, clientY);
+    lastMoveTime = performance.now();
+    accumulatedTempoDelta = 0;
+}
+
+// Handle wheel drag move
+function handleWheelMove(clientX, clientY) {
+    if (!isDragging) return;
+    
+    const now = performance.now();
+    const currentAngle = getAngleFromCenter(tempoWheel, clientX, clientY);
+    let deltaAngle = currentAngle - lastAngle;
+    
+    // Handle wrap-around at ±180 degrees
+    if (deltaAngle > 180) deltaAngle -= 360;
+    if (deltaAngle < -180) deltaAngle += 360;
+    
+    // Update visual rotation
+    wheelRotation += deltaAngle;
+    updateWheelRotation();
+    
+    // Calculate velocity (degrees per ms)
+    const timeDelta = now - lastMoveTime;
+    const velocity = timeDelta > 0 ? Math.abs(deltaAngle) / timeDelta : 0;
+    
+    // Velocity multiplier: faster rotation = bigger effect (1x to 3x)
+    const velocityMultiplier = 1 + Math.min(velocity * 30, 2);
+    
+    // Base sensitivity: 6 degrees = 1 BPM, multiplied by velocity
+    const tempoDelta = (deltaAngle / 6) * velocityMultiplier;
+    accumulatedTempoDelta += tempoDelta;
+    
+    // Apply tempo change when we have at least 1 BPM difference
+    if (Math.abs(accumulatedTempoDelta) >= 1) {
+        const tempoChange = Math.trunc(accumulatedTempoDelta);
+        currentTempo = clampTempo(currentTempo + tempoChange);
+        updateTempoDisplay(currentTempo);
+        restartMetronome();
+        accumulatedTempoDelta -= tempoChange;
+    }
+    
+    lastAngle = currentAngle;
+    lastMoveTime = now;
+}
+
+// Handle wheel drag end
+function handleWheelEnd() {
+    isDragging = false;
 }
 
 // Open tempo overlay
@@ -292,6 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tempoIncreaseBtn = document.getElementById('tempoIncrease');
     tempoDecreaseBtn = document.getElementById('tempoDecrease');
     tapButton = document.getElementById('tapButton');
+    tempoWheel = document.getElementById('tempoWheel');
 
     // Play/Pause button
     if (playButton) {
@@ -309,6 +388,31 @@ document.addEventListener('DOMContentLoaded', () => {
     // Tap tempo button
     if (tapButton) {
         tapButton.addEventListener('click', handleTap);
+    }
+
+    // Tempo wheel rotation
+    if (tempoWheel) {
+        // Mouse events
+        tempoWheel.addEventListener('mousedown', (e) => {
+            handleWheelStart(e.clientX, e.clientY);
+        });
+        document.addEventListener('mousemove', (e) => {
+            handleWheelMove(e.clientX, e.clientY);
+        });
+        document.addEventListener('mouseup', handleWheelEnd);
+        
+        // Touch events
+        tempoWheel.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            handleWheelStart(touch.clientX, touch.clientY);
+        });
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                const touch = e.touches[0];
+                handleWheelMove(touch.clientX, touch.clientY);
+            }
+        });
+        document.addEventListener('touchend', handleWheelEnd);
     }
 
     // Tempo controls
