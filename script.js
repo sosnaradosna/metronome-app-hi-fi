@@ -14,6 +14,10 @@ let currentBeat = 0;
 let beatsPerMeasure = 4; // Time signature numerator (4/4 = 4 beats)
 let lastBeatTime = 0; // When the last beat was played (performance.now())
 
+// Tap tempo state
+let tapTimes = [];
+const TAP_TIMEOUT = 2000; // Reset taps after 2 seconds of inactivity
+
 // DOM Elements (initialized after DOM ready)
 let tempoValueElement;
 let tempoOverlay;
@@ -24,6 +28,7 @@ let playButton;
 let playButtonIcon;
 let tempoIncreaseBtn;
 let tempoDecreaseBtn;
+let tapButton;
 
 // Clamp tempo to valid range
 function clampTempo(value) {
@@ -51,6 +56,42 @@ function increaseTempo() {
 function decreaseTempo() {
     if (currentTempo > MIN_TEMPO) {
         currentTempo--;
+        updateTempoDisplay(currentTempo);
+        restartMetronome();
+    }
+}
+
+// Handle tap tempo
+function handleTap() {
+    const now = performance.now();
+    
+    // Reset if too much time has passed since last tap
+    if (tapTimes.length > 0 && now - tapTimes[tapTimes.length - 1] > TAP_TIMEOUT) {
+        tapTimes = [];
+    }
+    
+    // Add current tap time
+    tapTimes.push(now);
+    
+    // Keep only last 8 taps for averaging
+    if (tapTimes.length > 8) {
+        tapTimes.shift();
+    }
+    
+    // Need at least 2 taps to calculate tempo
+    if (tapTimes.length >= 2) {
+        // Calculate average interval between taps
+        let totalInterval = 0;
+        for (let i = 1; i < tapTimes.length; i++) {
+            totalInterval += tapTimes[i] - tapTimes[i - 1];
+        }
+        const avgInterval = totalInterval / (tapTimes.length - 1);
+        
+        // Convert to BPM (60000ms = 1 minute)
+        const tappedTempo = Math.round(60000 / avgInterval);
+        
+        // Clamp to valid range and update
+        currentTempo = clampTempo(tappedTempo);
         updateTempoDisplay(currentTempo);
         restartMetronome();
     }
@@ -250,6 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
     playButtonIcon = document.getElementById('playButtonIcon');
     tempoIncreaseBtn = document.getElementById('tempoIncrease');
     tempoDecreaseBtn = document.getElementById('tempoDecrease');
+    tapButton = document.getElementById('tapButton');
 
     // Play/Pause button
     if (playButton) {
@@ -262,6 +304,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (tempoDecreaseBtn) {
         tempoDecreaseBtn.addEventListener('click', decreaseTempo);
+    }
+
+    // Tap tempo button
+    if (tapButton) {
+        tapButton.addEventListener('click', handleTap);
     }
 
     // Tempo controls
