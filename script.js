@@ -10,6 +10,8 @@ let isFirstInput = true;
 let isPlaying = false;
 let audioContext = null;
 let schedulerTimerId = null;
+let currentBeat = 0;
+let beatsPerMeasure = 4; // Time signature numerator (4/4 = 4 beats)
 
 // DOM Elements (initialized after DOM ready)
 let tempoValueElement;
@@ -120,15 +122,17 @@ function initAudioContext() {
     }
 }
 
-// Create click sound
-function playClick() {
+// Create click sound (accented = first beat of measure)
+function playClick(accented = false) {
     initAudioContext();
     
     const osc = audioContext.createOscillator();
     const envelope = audioContext.createGain();
     
-    osc.frequency.value = 1000;
-    envelope.gain.value = 0.5;
+    // Accent: higher pitch (1500Hz) and louder (0.7)
+    // Normal: lower pitch (1000Hz) and quieter (0.4)
+    osc.frequency.value = accented ? 1500 : 1000;
+    envelope.gain.value = accented ? 0.7 : 0.4;
     envelope.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
     
     osc.connect(envelope);
@@ -148,7 +152,14 @@ function scheduleNextTick() {
     if (!isPlaying) return;
     
     schedulerTimerId = setTimeout(() => {
-        playClick();
+        // Advance beat counter
+        currentBeat++;
+        if (currentBeat > beatsPerMeasure) {
+            currentBeat = 1;
+        }
+        
+        // Play click with accent on beat 1
+        playClick(currentBeat === 1);
         scheduleNextTick();
     }, getIntervalMs());
 }
@@ -158,8 +169,9 @@ function startMetronome() {
     initAudioContext();
     isPlaying = true;
     
-    // Play first click immediately
-    playClick();
+    // Reset beat counter and play first click (accented)
+    currentBeat = 1;
+    playClick(true);
     
     // Schedule next clicks
     scheduleNextTick();
