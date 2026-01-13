@@ -2,18 +2,18 @@
     --white: #f8f9f6;
     --grey-superlight: #eff1e9;
     --black: #0e100a;
+    --black-light: #1e2316;
     --font-family: 'Andale Mono', monospace;
-    --font-size-100: 10px;
-    --font-size-400: 20px;
-    --font-size-600: 36px;
-    --space-8: 8px;
-    --space-20: 20px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 html, body {
     height: 100%;
-    margin: 0;
-    padding: 0;
     font-family: var(--font-family);
     background-color: var(--white);
     color: var(--black);
@@ -24,85 +24,282 @@ body {
     justify-content: center;
 }
 
-.main-container {
-    width: 360px; /* Mobile width */
+button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* ============ MAIN LAYOUT ============ */
+.home {
+    width: 360px;
     height: 100%;
     display: flex;
     flex-direction: column;
-}
-
-.top-container {
     background-color: var(--white);
+}
+
+/* ============ TOP SECTION ============ */
+.metronome-main-settings {
     display: flex;
     flex-direction: column;
 }
 
+/* Top bar */
 .metrum-tempo-setting {
-    padding: var(--space-20);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-20);
-    border-bottom: 1px solid var(--black);
+    padding: 20px;
 }
 
 .top-bar-content {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--black);
 }
 
 .trigger-tempo {
     display: flex;
-    align-items: flex-start;
-    gap: var(--space-8);
+    align-items: center;
+    gap: 8px;
 }
 
 .tempo-value {
-    font-size: var(--font-size-600);
+    font-size: 36px;
     line-height: 1;
 }
 
 .tempo-unit {
-    font-size: var(--font-size-100);
-    line-height: 0.9;
     display: flex;
     flex-direction: column;
+    font-size: 10px;
+    line-height: 0.9;
 }
 
 .metrum {
     display: flex;
     align-items: center;
-    font-size: var(--font-size-400);
-    gap: 0;
+    font-size: 20px;
 }
 
-.trigger-text {
+.metrum-value {
+    width: 40px;
+    text-align: center;
+}
+
+.metrum-slash {
+    width: 17px;
+    text-align: center;
+}
+
+/* ============ TEMPO CONTROLS SECTION ============ */
+.metronome-setting-tempo-play {
+    display: flex;
+    padding: 32px 16px 32px 24px;
+    gap: 18px;
+    align-items: flex-start;
+}
+
+/* Left icons menu */
+.metronome-menu {
+    display: flex;
+    flex-direction: column;
+    width: 44px;
+}
+
+.trigger-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.trigger-icon img {
+    width: 24px;
+    height: 24px;
+}
+
+/* Tempo controls wrapper */
+.tempo-controls {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    position: relative;
+}
+
+/* Tempo wheel container */
+.tempo-wheel-container {
+    padding-bottom: 44px;
+    z-index: 2;
+    position: relative;
+}
+
+/* Tempo wheel - outer grey background */
+.tempo-wheel {
+    background-color: var(--grey-superlight);
+    border-radius: 9999px;
+    padding: 2px;
+}
+
+/* Dashed indicators ring */
+.tempo-wheel-indicators {
+    border-radius: 9999px;
+    padding: 12px;
+    position: relative;
+}
+
+.tempo-wheel-indicators::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 9999px;
+    background: repeating-conic-gradient(
+        from 0deg,
+        transparent 0deg 0.2deg,
+        var(--black-light) 0.4deg 0.8deg,
+        transparent 1deg 4deg
+    );
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), black calc(100% - 6px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 6px), black calc(100% - 6px));
+    opacity: 0.5;
+}
+
+/* Inner play container with solid border */
+.tempo-play-container {
+    border: 2px solid var(--black);
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    padding: 44px 0;
+}
+
+/* Arrow buttons */
+.arrow-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.arrow-btn img {
+    width: 24px;
+    height: 24px;
+}
+
+/* Play button */
+.trigger-play {
+    width: 80px;
+    height: 80px;
+    background-color: var(--black);
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.trigger-play img {
     width: 40px;
     height: 40px;
+    filter: invert(1);
+}
+
+/* TAP tempo container */
+.tap-tempo-container {
     display: flex;
-    justify-content: center;
     align-items: center;
+    margin-left: -48px;
+    z-index: 1;
 }
 
-.line {
-    display: none; /* The border-bottom on the parent container handles this */
+.connection-line {
+    margin-right: -16px;
+    margin-top: -64px;
 }
 
-.metronome-setting-tempo-play {
-    height: 296px;
+.trigger-tap {
+    width: 60px;
+    height: 60px;
+    background-color: var(--grey-superlight);
+    border: 1px solid var(--black);
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: var(--black);
 }
 
-.bottom-container {
-    flex-grow: 1;
+/* ============ BOTTOM MENU SECTION ============ */
+.home-menu {
+    flex: 1;
     background-color: var(--grey-superlight);
     display: flex;
 }
 
+/* Logo sidebar */
 .logo-container {
     width: 90px;
     background-color: var(--black);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 0 0 0;
+    overflow: hidden;
 }
 
+.logo-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--grey-superlight);
+    font-size: 24px;
+    letter-spacing: 2.64px;
+}
+
+.logo-icon {
+    margin-top: 0px;
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo-icon img {
+    width: 48px;
+    height: 48px;
+    filter: invert(1);
+}
+
+/* Navigation menu */
 .home-menu-container {
-    flex-grow: 1;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.navlinks-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-tab {
+    padding: 16px 12px;
+    font-size: 24px;
+    letter-spacing: 2.64px;
 }

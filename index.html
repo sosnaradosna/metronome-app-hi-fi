@@ -7,40 +7,102 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="main-container">
-        <div class="top-container">
+    <div class="home">
+        <!-- TOP SECTION -->
+        <div class="metronome-main-settings">
+            <!-- Top bar with tempo and time signature -->
             <div class="metrum-tempo-setting">
                 <div class="top-bar-content">
                     <div class="trigger-tempo">
-                        <p class="tempo-value">120</p>
+                        <span class="tempo-value">120</span>
                         <div class="tempo-unit">
-                            <p>B</p>
-                            <p>P</p>
-                            <p>M</p>
+                            <span>B</span>
+                            <span>P</span>
+                            <span>M</span>
                         </div>
                     </div>
                     <div class="metrum">
-                        <div class="trigger-text">
-                            <p>4</p>
-                        </div>
-                        <p>/</p>
-                        <div class="trigger-text">
-                            <p>4</p>
-                        </div>
+                        <span class="metrum-value">4</span>
+                        <span class="metrum-slash">/</span>
+                        <span class="metrum-value">4</span>
                     </div>
                 </div>
-                <img class="line" alt="line" src="http://localhost:3845/assets/782f1c332c432451e37a0a4d913c4555816cdc5b.svg" />
             </div>
+
+            <!-- Tempo controls section -->
             <div class="metronome-setting-tempo-play">
-                <!-- Content for the tempo play settings will go here -->
+                <!-- Left menu with icons -->
+                <div class="metronome-menu">
+                    <div class="trigger-icon">
+                        <img src="icons/ic_mic.svg" alt="Mic">
+                    </div>
+                    <div class="trigger-icon">
+                        <img src="icons/ic_sync.svg" alt="Sync">
+                    </div>
+                    <div class="trigger-icon">
+                        <img src="icons/ic_voice.svg" alt="Voice">
+                    </div>
+                    <div class="trigger-icon">
+                        <img src="icons/ic_metronome.svg" alt="Metronome">
+                    </div>
+                </div>
+
+                <!-- Tempo wheel and TAP button -->
+                <div class="tempo-controls">
+                    <div class="tempo-wheel-container">
+                        <div class="tempo-wheel">
+                            <div class="tempo-wheel-indicators">
+                                <div class="tempo-play-container">
+                                    <button class="arrow-btn">
+                                        <img src="icons/ic_arrow-l.svg" alt="Decrease">
+                                    </button>
+                                    <button class="trigger-play">
+                                        <img src="icons/ic_play/L.svg" alt="Play">
+                                    </button>
+                                    <button class="arrow-btn">
+                                        <img src="icons/ic_arrow-r.svg" alt="Increase">
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tap-tempo-container">
+                        <svg class="connection-line" width="46" height="46" viewBox="0 0 46 46">
+                            <line x1="0" y1="0" x2="46" y2="46" stroke="#0e100a" stroke-width="1"/>
+                        </svg>
+                        <button class="trigger-tap">TAP</button>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="bottom-container">
+
+        <!-- BOTTOM SECTION - Menu -->
+        <div class="home-menu">
             <div class="logo-container">
-                <!-- Logo will go here -->
+                <div class="logo-text">
+                    <span>m</span>
+                    <span>e</span>
+                    <span>t</span>
+                    <span>r</span>
+                    <span>o</span>
+                    <span>n</span>
+                    <span>o</span>
+                    <span>m</span>
+                    <span>e</span>
+                </div>
+                <div class="logo-icon">
+                    <img src="icons/ic_metronome.svg" alt="Metronome">
+                </div>
             </div>
             <div class="home-menu-container">
-                <!-- Menu links will go here -->
+                <nav class="navlinks-container">
+                    <a href="#" class="nav-tab">metronome</a>
+                    <a href="#" class="nav-tab">technique</a>
+                    <a href="#" class="nav-tab">musicality</a>
+                    <a href="#" class="nav-tab">live</a>
+                    <a href="#" class="nav-tab">account</a>
+                    <a href="#" class="nav-tab">settings</a>
+                </nav>
             </div>
         </div>
     </div>
