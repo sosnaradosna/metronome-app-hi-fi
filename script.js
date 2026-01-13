@@ -9,9 +9,10 @@ let isFirstInput = true;
 // Metronome state
 let isPlaying = false;
 let audioContext = null;
-let schedulerTimerId = null;
+let timeoutId = null;
 let currentBeat = 0;
 let beatsPerMeasure = 4; // Time signature numerator (4/4 = 4 beats)
+let lastBeatTime = 0; // When the last beat was played (performance.now())
 
 // DOM Elements (initialized after DOM ready)
 let tempoValueElement;
@@ -116,21 +117,25 @@ function handleKeyInput(key) {
 function initAudioContext() {
     if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // Warm up the audio context with a silent sound
+        const silentOsc = audioContext.createOscillator();
+        const silentGain = audioContext.createGain();
+        silentGain.gain.value = 0;
+        silentOsc.connect(silentGain);
+        silentGain.connect(audioContext.destination);
+        silentOsc.start();
+        silentOsc.stop(audioContext.currentTime + 0.001);
     }
     if (audioContext.state === 'suspended') {
         audioContext.resume();
     }
 }
 
-// Create click sound (accented = first beat of measure)
-function playClick(accented = false) {
-    initAudioContext();
-    
+// Play a click sound
+function playClick(accented) {
     const osc = audioContext.createOscillator();
     const envelope = audioContext.createGain();
     
-    // Accent: higher pitch (1500Hz) and louder (0.7)
-    // Normal: lower pitch (1000Hz) and quieter (0.4)
     osc.frequency.value = accented ? 1500 : 1000;
     envelope.gain.value = accented ? 0.7 : 0.4;
     envelope.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
@@ -147,47 +152,70 @@ function getIntervalMs() {
     return (60 / currentTempo) * 1000;
 }
 
-// Schedule next tick using setTimeout (allows dynamic tempo changes)
-function scheduleNextTick() {
+// Schedule the next beat with drift correction
+function scheduleNextBeat() {
     if (!isPlaying) return;
     
-    schedulerTimerId = setTimeout(() => {
-        // Advance beat counter
+    const now = performance.now();
+    const interval = getIntervalMs();
+    const expectedNextBeat = lastBeatTime + interval;
+    const delay = Math.max(0, expectedNextBeat - now);
+    
+    timeoutId = setTimeout(() => {
+        if (!isPlaying) return;
+        
+        lastBeatTime = performance.now();
+        playClick(currentBeat === 1);
+        
         currentBeat++;
         if (currentBeat > beatsPerMeasure) {
             currentBeat = 1;
         }
         
-        // Play click with accent on beat 1
-        playClick(currentBeat === 1);
-        scheduleNextTick();
-    }, getIntervalMs());
+        scheduleNextBeat();
+    }, delay);
 }
 
 // Start metronome
 function startMetronome() {
     initAudioContext();
-    isPlaying = true;
     
-    // Reset beat counter and play first click (accented)
-    currentBeat = 1;
-    playClick(true);
-    
-    // Schedule next clicks
-    scheduleNextTick();
-    
+    // Update UI immediately
     if (playButtonIcon) {
         playButtonIcon.src = 'icons/ic_pause.svg';
         playButtonIcon.alt = 'Pause';
     }
+    
+    // Warmup: play silent click to initialize audio pipeline
+    const warmupOsc = audioContext.createOscillator();
+    const warmupGain = audioContext.createGain();
+    warmupGain.gain.value = 0; // Silent
+    warmupOsc.connect(warmupGain);
+    warmupGain.connect(audioContext.destination);
+    warmupOsc.start();
+    warmupOsc.stop(audioContext.currentTime + 0.001);
+    
+    // Wait for warmup to complete, then start playing
+    setTimeout(() => {
+        isPlaying = true;
+        currentBeat = 1;
+        lastBeatTime = performance.now();
+        
+        // Play first beat
+        playClick(true);
+        currentBeat = 2;
+        
+        // Schedule remaining beats
+        scheduleNextBeat();
+    }, 100);
 }
 
 // Stop metronome
 function stopMetronome() {
     isPlaying = false;
-    if (schedulerTimerId) {
-        clearTimeout(schedulerTimerId);
-        schedulerTimerId = null;
+    if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
     }
     if (playButtonIcon) {
         playButtonIcon.src = 'icons/ic_play/L.svg';
@@ -195,9 +223,9 @@ function stopMetronome() {
     }
 }
 
-// Tempo changes apply automatically on next tick - no restart needed
+// Tempo changes apply on next beat
 function restartMetronome() {
-    // Do nothing - next tick will use updated currentTempo
+    // Next beat will use new tempo automatically
 }
 
 // Toggle metronome
