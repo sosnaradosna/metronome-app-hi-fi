@@ -19,6 +19,8 @@ let triggerTempo;
 let tempoKeys;
 let playButton;
 let playButtonIcon;
+let tempoIncreaseBtn;
+let tempoDecreaseBtn;
 
 // Clamp tempo to valid range
 function clampTempo(value) {
@@ -31,6 +33,24 @@ function clampTempo(value) {
 // Update tempo display
 function updateTempoDisplay(value) {
     tempoValueElement.textContent = value;
+}
+
+// Increase tempo by 1
+function increaseTempo() {
+    if (currentTempo < MAX_TEMPO) {
+        currentTempo++;
+        updateTempoDisplay(currentTempo);
+        restartMetronome();
+    }
+}
+
+// Decrease tempo by 1
+function decreaseTempo() {
+    if (currentTempo > MIN_TEMPO) {
+        currentTempo--;
+        updateTempoDisplay(currentTempo);
+        restartMetronome();
+    }
 }
 
 // Open tempo overlay
@@ -185,10 +205,20 @@ document.addEventListener('DOMContentLoaded', () => {
     tempoKeys = document.querySelectorAll('.tempo-key');
     playButton = document.getElementById('playButton');
     playButtonIcon = document.getElementById('playButtonIcon');
+    tempoIncreaseBtn = document.getElementById('tempoIncrease');
+    tempoDecreaseBtn = document.getElementById('tempoDecrease');
 
     // Play/Pause button
     if (playButton) {
         playButton.addEventListener('click', toggleMetronome);
+    }
+
+    // Tempo increase/decrease buttons
+    if (tempoIncreaseBtn) {
+        tempoIncreaseBtn.addEventListener('click', increaseTempo);
+    }
+    if (tempoDecreaseBtn) {
+        tempoDecreaseBtn.addEventListener('click', decreaseTempo);
     }
 
     // Tempo controls
