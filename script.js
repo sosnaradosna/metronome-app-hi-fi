@@ -122,6 +122,28 @@ function updateWheelRotation() {
     }
 }
 
+// Play wheel tick sound (wooden, thin, delicate)
+function playWheelTick() {
+    if (!audioContext) {
+        initAudioContext();
+    }
+    
+    const osc = audioContext.createOscillator();
+    const envelope = audioContext.createGain();
+    
+    // High frequency, short, quiet - like a wooden gear click
+    osc.type = 'triangle';
+    osc.frequency.value = 2500;
+    envelope.gain.value = 0.15;
+    envelope.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.02);
+    
+    osc.connect(envelope);
+    envelope.connect(audioContext.destination);
+    
+    osc.start(audioContext.currentTime);
+    osc.stop(audioContext.currentTime + 0.02);
+}
+
 // Handle wheel drag start
 function handleWheelStart(clientX, clientY) {
     isDragging = true;
@@ -160,7 +182,15 @@ function handleWheelMove(clientX, clientY) {
     // Apply tempo change when we have at least 1 BPM difference
     if (Math.abs(accumulatedTempoDelta) >= 1) {
         const tempoChange = Math.trunc(accumulatedTempoDelta);
+        const oldTempo = currentTempo;
         currentTempo = clampTempo(currentTempo + tempoChange);
+        
+        // Play tick for each BPM change
+        const actualChange = Math.abs(currentTempo - oldTempo);
+        if (actualChange > 0) {
+            playWheelTick();
+        }
+        
         updateTempoDisplay(currentTempo);
         restartMetronome();
         accumulatedTempoDelta -= tempoChange;
