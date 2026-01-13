@@ -143,6 +143,16 @@ function getIntervalMs() {
     return (60 / currentTempo) * 1000;
 }
 
+// Schedule next tick using setTimeout (allows dynamic tempo changes)
+function scheduleNextTick() {
+    if (!isPlaying) return;
+    
+    schedulerTimerId = setTimeout(() => {
+        playClick();
+        scheduleNextTick();
+    }, getIntervalMs());
+}
+
 // Start metronome
 function startMetronome() {
     initAudioContext();
@@ -152,9 +162,7 @@ function startMetronome() {
     playClick();
     
     // Schedule next clicks
-    schedulerTimerId = setInterval(() => {
-        playClick();
-    }, getIntervalMs());
+    scheduleNextTick();
     
     if (playButtonIcon) {
         playButtonIcon.src = 'icons/ic_pause.svg';
@@ -166,7 +174,7 @@ function startMetronome() {
 function stopMetronome() {
     isPlaying = false;
     if (schedulerTimerId) {
-        clearInterval(schedulerTimerId);
+        clearTimeout(schedulerTimerId);
         schedulerTimerId = null;
     }
     if (playButtonIcon) {
@@ -175,14 +183,9 @@ function stopMetronome() {
     }
 }
 
-// Restart metronome (to apply new tempo)
+// Tempo changes apply automatically on next tick - no restart needed
 function restartMetronome() {
-    if (isPlaying) {
-        clearInterval(schedulerTimerId);
-        schedulerTimerId = setInterval(() => {
-            playClick();
-        }, getIntervalMs());
-    }
+    // Do nothing - next tick will use updated currentTempo
 }
 
 // Toggle metronome
