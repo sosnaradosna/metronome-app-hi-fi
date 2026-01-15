@@ -97,6 +97,20 @@ a {
     display: flex;
     align-items: center;
     font-size: 20px;
+    cursor: pointer;
+    position: relative;
+}
+
+/* Enlarged touch target without affecting layout */
+.metrum::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-height: 48px;
+    min-width: 100%;
+    width: 100%;
 }
 
 .metrum-value {
@@ -450,13 +464,25 @@ button.trigger-play img {
 }
 
 .tempo-key-icon img {
-    width: 24px;
-    height: 24px;
+    width: 48px;
+    height: 48px;
 }
 
 .tempo-key-confirm {
     background-color: #1f74b5;
     border: none;
+    position: relative;
+}
+
+/* Enlarged touch target for confirm button */
+.tempo-key-confirm::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 60px;
+    min-height: 60px;
 }
 
 .tempo-key-confirm img {
@@ -619,6 +645,18 @@ button.trigger-play img {
     background: transparent;
     border: none;
     cursor: pointer;
+    position: relative;
+}
+
+/* Enlarged touch target for confirm button */
+.metrum-confirm-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 60px;
+    min-height: 60px;
 }
 
 .metrum-confirm-btn img {
@@ -660,7 +698,3 @@ button.trigger-play img {
     opacity: 0.7;
 }
 
-/* Make metrum values clickable */
-.metrum-value {
-    cursor: pointer;
-}

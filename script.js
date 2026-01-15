@@ -53,6 +53,7 @@ let metrumWheelDenominator;
 let metrumPresetsGrid;
 let metrumConfirmBtn;
 let metrumValueElements;
+let metrumTrigger;
 
 // Wheel drag state
 let activeWheel = null;
@@ -735,6 +736,7 @@ document.addEventListener('DOMContentLoaded', () => {
     metrumPresetsGrid = document.getElementById('metrumPresetsGrid');
     metrumConfirmBtn = document.getElementById('metrumConfirmBtn');
     metrumValueElements = document.querySelectorAll('.metrum-value');
+    metrumTrigger = document.querySelector('.metrum');
 
     // Play/Pause button
     if (playButton) {
@@ -817,10 +819,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // ============ METRUM OVERLAY EVENTS ============
     
-    // Click on metrum values to open overlay
-    metrumValueElements.forEach(el => {
-        el.addEventListener('click', openMetrumOverlay);
-    });
+    // Click on metrum container to open overlay
+    if (metrumTrigger) {
+        metrumTrigger.addEventListener('click', openMetrumOverlay);
+    }
     
     // Metrum wheel events
     [metrumWheelNumerator, metrumWheelDenominator].forEach(wheel => {
