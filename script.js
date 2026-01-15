@@ -101,6 +101,7 @@ function decreaseTempo() {
 
 // Handle tap tempo
 function handleTap() {
+    playWheelTick();
     const now = performance.now();
     
     // Reset if too much time has passed since last tap

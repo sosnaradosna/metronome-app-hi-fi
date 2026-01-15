@@ -244,6 +244,18 @@ button.trigger-play {
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    position: relative;
+}
+
+/* Enlarged touch target for play button (vertical only) */
+button.trigger-play::before {
+    content: '';
+    position: absolute;
+    top: -12px;
+    bottom: -12px;
+    left: 0;
+    right: 0;
+    border-radius: 9999px;
 }
 
 button.trigger-play img {
