@@ -14,6 +14,7 @@
 
 html, body {
     height: 100%;
+    height: -webkit-fill-available; /* iOS Safari */
     height: 100dvh; /* Dynamic viewport height for mobile */
     font-family: var(--font-family);
     background-color: var(--white);
@@ -50,10 +51,12 @@ a {
     width: 100%;
     max-width: 600px;
     height: 100%;
+    height: -webkit-fill-available; /* iOS Safari */
     height: 100dvh; /* Dynamic viewport height for mobile */
     display: flex;
     flex-direction: column;
     background-color: var(--white);
+    overflow: hidden;
 }
 
 /* ============ TOP SECTION ============ */
@@ -341,6 +344,7 @@ button.trigger-play img {
 /* ============ BOTTOM MENU SECTION ============ */
 .bottom-panel-slider {
     flex: 1;
+    min-height: 0;
     overflow: hidden;
     position: relative;
 }
