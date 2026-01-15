@@ -63,6 +63,7 @@ a {
 .metronome-main-settings {
     display: flex;
     flex-direction: column;
+    min-height: 383px;
 }
 
 /* Top bar */
@@ -344,7 +345,7 @@ button.trigger-play img {
 /* ============ BOTTOM MENU SECTION ============ */
 .bottom-panel-slider {
     flex: 1;
-    min-height: 280px;
+    min-height: 417px;
     overflow: hidden;
     position: relative;
 }
