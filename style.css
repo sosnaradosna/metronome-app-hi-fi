@@ -412,7 +412,7 @@ button.trigger-play img {
 .panel-metronome {
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    padding: 32px;
     overflow: hidden;
 }
 
