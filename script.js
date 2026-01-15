@@ -497,20 +497,32 @@ function handleMetrumWheelMove(e) {
 }
 
 // Handle wheel drag end
-function handleMetrumWheelEnd() {
+function handleMetrumWheelEnd(e) {
     if (!activeWheel) return;
-    
+
     document.body.classList.remove('dragging');
-    
+
     const values = getWheelValues(activeWheel);
-    
+
+    // If no drag happened, treat as tap - find the item under touch
+    if (!wheelDidDrag && e && e.changedTouches) {
+        const touch = e.changedTouches[0];
+        const element = document.elementFromPoint(touch.clientX, touch.clientY);
+        const item = element?.closest('.metrum-wheel-item');
+        if (item) {
+            handleWheelItemClick(activeWheel, item);
+            activeWheel = null;
+            return;
+        }
+    }
+
     // Apply momentum if velocity is significant
     if (Math.abs(wheelVelocity) > 0.3) {
         applyWheelMomentum(activeWheel, values);
     } else {
         snapToNearestItem(activeWheel, values);
     }
-    
+
     activeWheel = null;
 }
 
@@ -724,9 +736,12 @@ function showBeatFlash(isAccent) {
     }
 }
 
-// Calculate interval in ms from tempo
+// Calculate interval in ms from tempo, adjusted for time signature denominator
 function getIntervalMs() {
-    return (60 / currentTempo) * 1000;
+    // Base interval for quarter note (denominator = 4)
+    const quarterNoteInterval = (60 / currentTempo) * 1000;
+    // Adjust for actual denominator: if 8th note (8), halve the interval; if half note (2), double it
+    return quarterNoteInterval * (4 / currentDenominator);
 }
 
 // Schedule the next beat with drift correction
