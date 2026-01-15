@@ -175,6 +175,12 @@ function playWheelTick() {
     if (!audioContext) {
         initAudioContext();
     }
+    
+    // Don't play if context is still suspended
+    if (audioContext.state === 'suspended') {
+        audioContext.resume();
+        return;
+    }
 
     const now = audioContext.currentTime;
 
@@ -861,6 +867,15 @@ function toggleMetronome() {
 // ============ INITIALIZATION ============
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize audio context on first user interaction
+    const initAudioOnFirstTouch = () => {
+        initAudioContext();
+        document.removeEventListener('touchstart', initAudioOnFirstTouch);
+        document.removeEventListener('mousedown', initAudioOnFirstTouch);
+    };
+    document.addEventListener('touchstart', initAudioOnFirstTouch, { once: true });
+    document.addEventListener('mousedown', initAudioOnFirstTouch, { once: true });
+
     // Initialize DOM elements
     tempoValueElement = document.querySelector('.tempo-value');
     tempoOverlay = document.getElementById('tempoOverlay');
