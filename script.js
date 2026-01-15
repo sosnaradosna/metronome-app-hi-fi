@@ -1046,14 +1046,7 @@ function buildAccentsGrid() {
         // Set initial state
         updateColumnDisplay(column, accents[i]);
         
-        // Click handler (only if not dragged)
-        column.addEventListener('click', () => {
-            if (!accentDidDrag) {
-                cycleAccent(i);
-            }
-        });
-        
-        // Touch/mouse handlers for swipe
+        // Touch/mouse handlers for swipe and tap
         column.addEventListener('mousedown', (e) => handleAccentDragStart(e, i));
         column.addEventListener('touchstart', (e) => handleAccentDragStart(e, i), { passive: false });
         
@@ -1169,11 +1162,12 @@ function handleAccentDragMove(e) {
 
 // Handle accent column drag end
 function handleAccentDragEnd() {
-    // Use setTimeout to allow click event to check accentDidDrag before resetting
-    setTimeout(() => {
-        accentDidDrag = false;
-    }, 0);
+    // If no significant drag happened, treat as tap and cycle
+    if (accentDragBeat !== -1 && !accentDidDrag) {
+        cycleAccent(accentDragBeat);
+    }
     accentDragBeat = -1;
+    accentDidDrag = false;
 }
 
 // Get accent level for a beat (used by metronome)
