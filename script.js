@@ -81,6 +81,7 @@ let wheelLastTime = 0;
 let wheelMomentumId = null;
 let lastWheelIndex = -1; // Track last index for tick sound
 let wheelDidDrag = false; // Track if drag occurred (to prevent click after drag)
+let wheelTouchStartItem = null; // Store the item touched at start for tap detection
 
 // Clamp tempo to valid range
 function clampTempo(value) {
@@ -431,13 +432,13 @@ function getOriginalWheelValues(wheelElement) {
 // Handle wheel drag start
 function handleMetrumWheelStart(e, wheelElement) {
     e.preventDefault();
-    
+
     // Cancel any ongoing momentum
     if (wheelMomentumId) {
         cancelAnimationFrame(wheelMomentumId);
         wheelMomentumId = null;
     }
-    
+
     activeWheel = wheelElement;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     wheelDragStartY = clientY;
@@ -448,6 +449,10 @@ function handleMetrumWheelStart(e, wheelElement) {
     wheelVelocity = 0;
     wheelDidDrag = false; // Reset drag flag
     
+    // Save the touched item for tap detection
+    const target = e.touches ? document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY) : e.target;
+    wheelTouchStartItem = target?.closest('.metrum-wheel-item');
+
     // Initialize last index for tick sounds
     lastWheelIndex = Math.round(-wheelStartOffset / WHEEL_ITEM_HEIGHT);
     
@@ -504,17 +509,15 @@ function handleMetrumWheelEnd(e) {
 
     const values = getWheelValues(activeWheel);
 
-    // If no drag happened, treat as tap - find the item under touch
-    if (!wheelDidDrag && e && e.changedTouches) {
-        const touch = e.changedTouches[0];
-        const element = document.elementFromPoint(touch.clientX, touch.clientY);
-        const item = element?.closest('.metrum-wheel-item');
-        if (item) {
-            handleWheelItemClick(activeWheel, item);
-            activeWheel = null;
-            return;
-        }
+    // If no drag happened and we have a saved item, treat as tap
+    if (!wheelDidDrag && wheelTouchStartItem) {
+        handleWheelItemClick(activeWheel, wheelTouchStartItem);
+        activeWheel = null;
+        wheelTouchStartItem = null;
+        return;
     }
+
+    wheelTouchStartItem = null;
 
     // Apply momentum if velocity is significant
     if (Math.abs(wheelVelocity) > 0.3) {
