@@ -55,6 +55,9 @@ let metrumConfirmBtn;
 let metrumValueElements;
 let metrumTrigger;
 
+// Visual feedback element
+let beatLine;
+
 // Wheel drag state
 let activeWheel = null;
 let wheelDragStartY = 0;
@@ -664,16 +667,25 @@ function initAudioContext() {
 function playClick(accented) {
     const osc = audioContext.createOscillator();
     const envelope = audioContext.createGain();
-    
+
     osc.frequency.value = accented ? 1500 : 1000;
     envelope.gain.value = accented ? 0.7 : 0.4;
     envelope.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
-    
+
     osc.connect(envelope);
     envelope.connect(audioContext.destination);
-    
+
     osc.start(audioContext.currentTime);
     osc.stop(audioContext.currentTime + 0.05);
+    
+    // Visual beat flash - LED style
+    if (beatLine) {
+        const flashClass = accented ? 'beat-flash-accent' : 'beat-flash';
+        beatLine.classList.add(flashClass);
+        setTimeout(() => {
+            beatLine.classList.remove(flashClass);
+        }, 180);
+    }
 }
 
 // Calculate interval in ms from tempo
@@ -790,6 +802,9 @@ document.addEventListener('DOMContentLoaded', () => {
     metrumConfirmBtn = document.getElementById('metrumConfirmBtn');
     metrumValueElements = document.querySelectorAll('.metrum-value');
     metrumTrigger = document.querySelector('.metrum');
+    
+    // Visual feedback element
+    beatLine = document.querySelector('.beat-line');
 
     // Play/Pause button
     if (playButton) {
