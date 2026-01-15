@@ -14,6 +14,7 @@
 
 html, body {
     height: 100%;
+    height: 100dvh; /* Dynamic viewport height for mobile */
     font-family: var(--font-family);
     background-color: var(--white);
     color: var(--black);
@@ -49,6 +50,7 @@ a {
     width: 100%;
     max-width: 600px;
     height: 100%;
+    height: 100dvh; /* Dynamic viewport height for mobile */
     display: flex;
     flex-direction: column;
     background-color: var(--white);
