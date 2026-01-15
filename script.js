@@ -1169,6 +1169,10 @@ function handleAccentDragMove(e) {
 
 // Handle accent column drag end
 function handleAccentDragEnd() {
+    // Use setTimeout to allow click event to check accentDidDrag before resetting
+    setTimeout(() => {
+        accentDidDrag = false;
+    }, 0);
     accentDragBeat = -1;
 }
 
