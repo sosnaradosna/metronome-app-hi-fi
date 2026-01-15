@@ -175,21 +175,33 @@ function playWheelTick() {
     if (!audioContext) {
         initAudioContext();
     }
+
+    // Create noise buffer for sandy/grainy sound
+    const bufferSize = audioContext.sampleRate * 0.015; // 15ms
+    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+    const data = buffer.getChannelData(0);
     
-    const osc = audioContext.createOscillator();
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * 0.3;
+    }
+    
+    const noise = audioContext.createBufferSource();
+    noise.buffer = buffer;
+    
+    // High-pass filter to make it thin and airy
+    const filter = audioContext.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 3000;
+    
     const envelope = audioContext.createGain();
-    
-    // High frequency, short, quiet - like a wooden gear click
-    osc.type = 'triangle';
-    osc.frequency.value = 2500;
-    envelope.gain.value = 0.15;
-    envelope.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.02);
-    
-    osc.connect(envelope);
+    envelope.gain.value = 0.08;
+    envelope.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.015);
+
+    noise.connect(filter);
+    filter.connect(envelope);
     envelope.connect(audioContext.destination);
-    
-    osc.start(audioContext.currentTime);
-    osc.stop(audioContext.currentTime + 0.02);
+
+    noise.start(audioContext.currentTime);
 }
 
 // Handle wheel drag start
