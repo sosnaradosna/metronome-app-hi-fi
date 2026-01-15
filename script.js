@@ -65,6 +65,10 @@ let currentPanel = 0;
 // Accents
 let accentsGrid;
 let accents = []; // Array of accent levels (0-3) for each beat
+let accentDragStartY = 0;
+let accentDragBeat = -1;
+let accentDragStartLevel = 0;
+let accentDidDrag = false;
 
 // Wheel drag state
 let activeWheel = null;
@@ -1042,13 +1046,25 @@ function buildAccentsGrid() {
         // Set initial state
         updateColumnDisplay(column, accents[i]);
         
-        // Click handler
+        // Click handler (only if not dragged)
         column.addEventListener('click', () => {
-            cycleAccent(i);
+            if (!accentDidDrag) {
+                cycleAccent(i);
+            }
         });
+        
+        // Touch/mouse handlers for swipe
+        column.addEventListener('mousedown', (e) => handleAccentDragStart(e, i));
+        column.addEventListener('touchstart', (e) => handleAccentDragStart(e, i), { passive: false });
         
         accentsGrid.appendChild(column);
     }
+    
+    // Add document-level move/end handlers
+    document.addEventListener('mousemove', handleAccentDragMove);
+    document.addEventListener('touchmove', handleAccentDragMove, { passive: false });
+    document.addEventListener('mouseup', handleAccentDragEnd);
+    document.addEventListener('touchend', handleAccentDragEnd);
 }
 
 // Update column visual based on accent level
@@ -1070,6 +1086,90 @@ function cycleAccent(beatIndex) {
     const column = accentsGrid.children[beatIndex];
     updateColumnDisplay(column, accents[beatIndex]);
     playWheelTick();
+}
+
+// Handle accent column drag start
+function handleAccentDragStart(e, beatIndex) {
+    e.preventDefault();
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    accentDragStartY = clientY;
+    accentDragBeat = beatIndex;
+    accentDragStartLevel = accents[beatIndex];
+    accentDidDrag = false;
+}
+
+// Find which column is under the given X coordinate
+function getColumnAtX(clientX) {
+    if (!accentsGrid) return -1;
+    
+    const columns = accentsGrid.children;
+    for (let i = 0; i < columns.length; i++) {
+        const rect = columns[i].getBoundingClientRect();
+        // Add some slop - extend hit area by half the gap on each side
+        const slop = 4; // Half of 4px gap + some extra
+        if (clientX >= rect.left - slop && clientX <= rect.right + slop) {
+            return i;
+        }
+    }
+    
+    // If not directly over a column, find the closest one
+    let closestIndex = -1;
+    let closestDistance = Infinity;
+    for (let i = 0; i < columns.length; i++) {
+        const rect = columns[i].getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const distance = Math.abs(clientX - centerX);
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestIndex = i;
+        }
+    }
+    return closestIndex;
+}
+
+// Handle accent column drag move
+function handleAccentDragMove(e) {
+    if (accentDragBeat === -1) return;
+    
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const deltaY = accentDragStartY - clientY; // Positive = swipe up
+    
+    // Check if user moved horizontally to a different column
+    const currentColumn = getColumnAtX(clientX);
+    if (currentColumn !== -1 && currentColumn !== accentDragBeat) {
+        // Switch to new column
+        accentDragBeat = currentColumn;
+        accentDragStartLevel = accents[currentColumn];
+        accentDragStartY = clientY; // Reset Y reference for new column
+        accentDidDrag = true;
+        playWheelTick();
+        return;
+    }
+    
+    // Threshold for level change (40px per level, matching cell height)
+    const levelDelta = Math.round(deltaY / 40);
+    
+    if (Math.abs(deltaY) > 10) {
+        accentDidDrag = true;
+    }
+    
+    // Calculate new level
+    let newLevel = accentDragStartLevel + levelDelta;
+    newLevel = Math.max(0, Math.min(3, newLevel));
+    
+    // Update if changed
+    if (newLevel !== accents[accentDragBeat]) {
+        accents[accentDragBeat] = newLevel;
+        const column = accentsGrid.children[accentDragBeat];
+        updateColumnDisplay(column, newLevel);
+        playWheelTick();
+    }
+}
+
+// Handle accent column drag end
+function handleAccentDragEnd() {
+    accentDragBeat = -1;
 }
 
 // Get accent level for a beat (used by metronome)
