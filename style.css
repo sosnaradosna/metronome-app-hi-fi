@@ -24,6 +24,7 @@ html, body {
 body {
     display: flex;
     justify-content: center;
+    padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 button {
@@ -346,6 +347,7 @@ button.trigger-play img {
     min-height: 280px;
     overflow: hidden;
     position: relative;
+    padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 .bottom-panel-track {
