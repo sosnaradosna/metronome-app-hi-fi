@@ -176,32 +176,46 @@ function playWheelTick() {
         initAudioContext();
     }
 
-    // Create noise buffer for sandy/grainy sound
-    const bufferSize = audioContext.sampleRate * 0.015; // 15ms
+    const now = audioContext.currentTime;
+
+    // Layer 1: Sandy noise for texture
+    const bufferSize = audioContext.sampleRate * 0.02;
     const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
     const data = buffer.getChannelData(0);
     
     for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * 0.3;
+        data[i] = (Math.random() * 2 - 1) * 0.25;
     }
     
     const noise = audioContext.createBufferSource();
     noise.buffer = buffer;
     
-    // High-pass filter to make it thin and airy
-    const filter = audioContext.createBiquadFilter();
-    filter.type = 'highpass';
-    filter.frequency.value = 3000;
+    const noiseFilter = audioContext.createBiquadFilter();
+    noiseFilter.type = 'highpass';
+    noiseFilter.frequency.value = 2500;
     
-    const envelope = audioContext.createGain();
-    envelope.gain.value = 0.08;
-    envelope.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.015);
+    const noiseEnvelope = audioContext.createGain();
+    noiseEnvelope.gain.value = 0.06;
+    noiseEnvelope.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
 
-    noise.connect(filter);
-    filter.connect(envelope);
-    envelope.connect(audioContext.destination);
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseEnvelope);
+    noiseEnvelope.connect(audioContext.destination);
+    noise.start(now);
 
-    noise.start(audioContext.currentTime);
+    // Layer 2: Subtle body (soft thump)
+    const body = audioContext.createOscillator();
+    const bodyEnvelope = audioContext.createGain();
+    
+    body.type = 'triangle';
+    body.frequency.value = 1800;
+    bodyEnvelope.gain.value = 0.04;
+    bodyEnvelope.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
+
+    body.connect(bodyEnvelope);
+    bodyEnvelope.connect(audioContext.destination);
+    body.start(now);
+    body.stop(now + 0.015);
 }
 
 // Handle wheel drag start
