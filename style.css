@@ -24,7 +24,6 @@ html, body {
 body {
     display: flex;
     justify-content: center;
-    padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 button {
@@ -52,11 +51,12 @@ a {
     width: 100%;
     max-width: 600px;
     min-height: 100vh;
-    min-height: 100dvh;
+    min-height: 100svh; /* Small viewport height - accounts for browser UI */
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     background-color: var(--white);
+    padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 /* ============ TOP SECTION ============ */
@@ -347,7 +347,6 @@ button.trigger-play img {
     min-height: 280px;
     overflow: hidden;
     position: relative;
-    padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 .bottom-panel-track {
