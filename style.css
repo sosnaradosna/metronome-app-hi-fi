@@ -626,6 +626,7 @@ button.trigger-play img {
     line-height: 1.2;
     transition: transform 0.15s ease, opacity 0.15s ease, font-size 0.15s ease;
     flex-shrink: 0;
+    cursor: pointer;
 }
 
 /* Center selection indicator */

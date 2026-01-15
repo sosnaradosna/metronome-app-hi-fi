@@ -65,6 +65,7 @@ let wheelLastY = 0;
 let wheelLastTime = 0;
 let wheelMomentumId = null;
 let lastWheelIndex = -1; // Track last index for tick sound
+let wheelDidDrag = false; // Track if drag occurred (to prevent click after drag)
 
 // Clamp tempo to valid range
 function clampTempo(value) {
@@ -428,6 +429,7 @@ function handleMetrumWheelStart(e, wheelElement) {
     wheelLastY = clientY;
     wheelLastTime = performance.now();
     wheelVelocity = 0;
+    wheelDidDrag = false; // Reset drag flag
     
     // Initialize last index for tick sounds
     lastWheelIndex = Math.round(-wheelStartOffset / WHEEL_ITEM_HEIGHT);
@@ -443,6 +445,11 @@ function handleMetrumWheelMove(e) {
     const deltaY = clientY - wheelDragStartY;
     const now = performance.now();
     const dt = now - wheelLastTime;
+    
+    // Mark as dragged if moved more than 5px
+    if (Math.abs(deltaY) > 5) {
+        wheelDidDrag = true;
+    }
     
     if (dt > 0) {
         wheelVelocity = (clientY - wheelLastY) / dt;
@@ -604,6 +611,33 @@ function scrollWheelToValue(wheelElement, baseValues, value) {
     itemsContainer.style.transform = `translateY(${offset + (WHEEL_ITEM_HEIGHT * 2)}px)`;
     
     updateWheelStyles(wheelElement, index);
+}
+
+// Handle click on wheel item to select it
+function handleWheelItemClick(wheelElement, item) {
+    const index = parseInt(item.dataset.index);
+    const value = parseInt(item.dataset.value);
+    
+    const offset = -index * WHEEL_ITEM_HEIGHT;
+    wheelElement.dataset.offset = offset;
+    wheelCurrentOffset = offset;
+    
+    const itemsContainer = wheelElement.querySelector('.metrum-wheel-items');
+    itemsContainer.style.transition = 'transform 0.3s ease-out';
+    itemsContainer.style.transform = `translateY(${offset + (WHEEL_ITEM_HEIGHT * 2)}px)`;
+    
+    updateWheelStyles(wheelElement, index);
+    playWheelTick();
+    
+    // Update editing value
+    if (wheelElement.dataset.type === 'numerator') {
+        editingNumerator = value;
+    } else {
+        editingDenominator = value;
+    }
+    
+    // Update preset selection
+    updatePresetSelection();
 }
 
 // ============ METRONOME ============
@@ -856,6 +890,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wheel) {
             wheel.addEventListener('mousedown', (e) => handleMetrumWheelStart(e, wheel));
             wheel.addEventListener('touchstart', (e) => handleMetrumWheelStart(e, wheel), { passive: false });
+            
+            // Click on wheel item to select it (only if not dragged)
+            wheel.addEventListener('click', (e) => {
+                if (wheelDidDrag) return; // Ignore click after drag
+                const item = e.target.closest('.metrum-wheel-item');
+                if (item) {
+                    handleWheelItemClick(wheel, item);
+                }
+            });
         }
     });
     
