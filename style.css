@@ -449,6 +449,7 @@ button.trigger-play img {
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 8px;
 }
 
 /* Accents Module */
@@ -485,27 +486,34 @@ button.trigger-play img {
 
 .accents-lines {
     position: absolute;
-    left: -8px;
-    right: -8px;
     top: 0;
     bottom: 0;
+    left: 0;
+    right: 0;
     pointer-events: none;
+    overflow: visible;
 }
 
 .accent-line {
     position: absolute;
-    left: 0;
-    right: 0;
-    height: 1px;
     background-color: var(--black);
 }
 
+/* Top line: 4px, from left screen edge to 20px before right edge */
+/* Panel has 20px padding + content has 8px = 28px from module to screen edge */
 .accent-line-top {
     top: 40px;
+    left: -28px;
+    right: -8px;
+    height: 4px;
 }
 
+/* Bottom line: 2px, from right screen edge to 20px before left edge */
 .accent-line-bottom {
     top: 80px;
+    left: -8px;
+    right: -28px;
+    height: 2px;
 }
 
 /* Panel Category Menu */

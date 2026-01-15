@@ -11,7 +11,7 @@ let currentNumerator = 4; // Beats per measure (1-32)
 let currentDenominator = 4; // Note value (1, 2, 4, 8, 16, 32, 64, 128)
 let editingNumerator = 4;
 let editingDenominator = 4;
-const NUMERATOR_VALUES = Array.from({ length: 32 }, (_, i) => i + 1); // 1 to 32
+const NUMERATOR_VALUES = Array.from({ length: 16 }, (_, i) => i + 1); // 1 to 16
 const DENOMINATOR_VALUES = [1, 2, 4, 8, 16, 32, 64, 128];
 
 // Metronome state
@@ -333,6 +333,7 @@ function closeMetrumOverlay(save = false) {
         beatsPerMeasure = currentNumerator;
         updateMetrumDisplay();
         initAccents(); // Reinitialize accents for new time signature
+        buildAccentsGrid(); // Rebuild grid if panel is open
         restartMetronome();
     }
     metrumOverlay.classList.remove('active');
