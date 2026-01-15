@@ -1,6 +1,6 @@
 // Tempo management
 const MIN_TEMPO = 1;
-const MAX_TEMPO = 240;
+const MAX_TEMPO = 360;
 
 let currentTempo = 120;
 let editingTempo = '';
@@ -12,7 +12,7 @@ let currentDenominator = 4; // Note value (1, 2, 4, 8, 16, 32, 64, 128)
 let editingNumerator = 4;
 let editingDenominator = 4;
 const NUMERATOR_VALUES = Array.from({ length: 16 }, (_, i) => i + 1); // 1 to 16
-const DENOMINATOR_VALUES = [1, 2, 4, 8, 16, 32, 64, 128];
+const DENOMINATOR_VALUES = [1, 2, 4, 8, 16, 32];
 
 // Metronome state
 let isPlaying = false;
