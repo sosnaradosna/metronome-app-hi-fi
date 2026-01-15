@@ -58,6 +58,14 @@ let metrumTrigger;
 // Visual feedback element
 let beatLine;
 
+// Panel slider
+let panelTrack;
+let currentPanel = 0;
+
+// Accents
+let accentsGrid;
+let accents = []; // Array of accent levels (0-3) for each beat
+
 // Wheel drag state
 let activeWheel = null;
 let wheelDragStartY = 0;
@@ -324,10 +332,11 @@ function closeMetrumOverlay(save = false) {
         currentDenominator = editingDenominator;
         beatsPerMeasure = currentNumerator;
         updateMetrumDisplay();
+        initAccents(); // Reinitialize accents for new time signature
         restartMetronome();
     }
     metrumOverlay.classList.remove('active');
-    
+
     // Cancel any ongoing momentum
     if (wheelMomentumId) {
         cancelAnimationFrame(wheelMomentumId);
@@ -664,12 +673,30 @@ function initAudioContext() {
 }
 
 // Play a click sound
-function playClick(accented) {
+function playClick(accentLevel) {
+    // accentLevel: 0 = silent, 1 = ghost, 2 = normal, 3 = accent
+    if (accentLevel === 0) {
+        // Silent - still show visual but no sound
+        showBeatFlash(false);
+        return;
+    }
+    
     const osc = audioContext.createOscillator();
     const envelope = audioContext.createGain();
 
-    osc.frequency.value = accented ? 1500 : 1000;
-    envelope.gain.value = accented ? 0.7 : 0.4;
+    // Frequency and volume based on accent level
+    if (accentLevel === 3) {
+        osc.frequency.value = 1500;
+        envelope.gain.value = 0.7;
+    } else if (accentLevel === 2) {
+        osc.frequency.value = 1000;
+        envelope.gain.value = 0.4;
+    } else {
+        // Ghost note (level 1) - same as normal but quieter
+        osc.frequency.value = 1000;
+        envelope.gain.value = 0.12;
+    }
+    
     envelope.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
 
     osc.connect(envelope);
@@ -679,8 +706,12 @@ function playClick(accented) {
     osc.stop(audioContext.currentTime + 0.05);
     
     // Visual beat flash - LED style
+    showBeatFlash(accentLevel === 3);
+}
+
+function showBeatFlash(isAccent) {
     if (beatLine) {
-        const flashClass = accented ? 'beat-flash-accent' : 'beat-flash';
+        const flashClass = isAccent ? 'beat-flash-accent' : 'beat-flash';
         beatLine.classList.add(flashClass);
         setTimeout(() => {
             beatLine.classList.remove(flashClass);
@@ -706,8 +737,8 @@ function scheduleNextBeat() {
         if (!isPlaying) return;
         
         lastBeatTime = performance.now();
-        playClick(currentBeat === 1);
-        
+        playClick(getAccentLevel(currentBeat - 1));
+
         currentBeat++;
         if (currentBeat > beatsPerMeasure) {
             currentBeat = 1;
@@ -743,7 +774,7 @@ function startMetronome() {
         lastBeatTime = performance.now();
         
         // Play first beat
-        playClick(true);
+        playClick(getAccentLevel(0));
         currentBeat = 2;
         
         // Schedule remaining beats
@@ -939,4 +970,111 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Metrum overlay can only be closed via the confirm button
     // (no click-outside or keyboard shortcuts)
+    
+    // ============ PANEL SLIDER ============
+    
+    panelTrack = document.querySelector('.bottom-panel-track');
+    accentsGrid = document.getElementById('accentsGrid');
+    
+    // Initialize accents
+    initAccents();
+    
+    // Handle panel navigation
+    document.querySelectorAll('[data-panel]').forEach(el => {
+        el.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetPanel = parseInt(el.dataset.panel);
+            switchToPanel(targetPanel);
+        });
+    });
 });
+
+// Switch to a specific panel
+function switchToPanel(panelIndex) {
+    currentPanel = panelIndex;
+    if (panelTrack) {
+        panelTrack.style.transform = `translateX(-${panelIndex * 100}%)`;
+    }
+    
+    // Rebuild accents grid when opening metronome panel
+    if (panelIndex === 1) {
+        buildAccentsGrid();
+    }
+}
+
+// ============ ACCENTS ============
+
+// Initialize accents array based on time signature
+function initAccents() {
+    const numBeats = currentNumerator;
+    // Default: first beat is accent (3), others are normal (2)
+    accents = Array(numBeats).fill(2);
+    accents[0] = 3; // First beat is accented
+}
+
+// Build the accents grid UI
+function buildAccentsGrid() {
+    if (!accentsGrid) return;
+    
+    const numBeats = currentNumerator;
+    
+    // Ensure accents array matches current time signature
+    if (accents.length !== numBeats) {
+        initAccents();
+    }
+    
+    accentsGrid.innerHTML = '';
+    
+    for (let i = 0; i < numBeats; i++) {
+        const column = document.createElement('div');
+        column.className = 'accent-column';
+        column.dataset.beat = i;
+        
+        // Create 3 cells (top to bottom: high, mid, low)
+        for (let j = 0; j < 3; j++) {
+            const cell = document.createElement('div');
+            cell.className = 'accent-cell';
+            cell.dataset.level = 3 - j; // 3, 2, 1 from top to bottom
+            column.appendChild(cell);
+        }
+        
+        // Set initial state
+        updateColumnDisplay(column, accents[i]);
+        
+        // Click handler
+        column.addEventListener('click', () => {
+            cycleAccent(i);
+        });
+        
+        accentsGrid.appendChild(column);
+    }
+}
+
+// Update column visual based on accent level
+function updateColumnDisplay(column, level) {
+    const cells = column.querySelectorAll('.accent-cell');
+    cells.forEach((cell, index) => {
+        const cellLevel = 3 - index; // 3, 2, 1 from top to bottom
+        if (cellLevel <= level) {
+            cell.classList.add('active');
+        } else {
+            cell.classList.remove('active');
+        }
+    });
+}
+
+// Cycle accent level: 0 -> 1 -> 2 -> 3 -> 0
+function cycleAccent(beatIndex) {
+    accents[beatIndex] = (accents[beatIndex] + 1) % 4;
+    const column = accentsGrid.children[beatIndex];
+    updateColumnDisplay(column, accents[beatIndex]);
+    playWheelTick();
+}
+
+// Get accent level for a beat (used by metronome)
+function getAccentLevel(beat) {
+    if (beat < accents.length) {
+        return accents[beat];
+    }
+    return 2; // Default normal
+}

@@ -337,9 +337,25 @@ button.trigger-play img {
 }
 
 /* ============ BOTTOM MENU SECTION ============ */
-.home-menu {
+.bottom-panel-slider {
     flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.bottom-panel-track {
+    display: flex;
+    height: 100%;
+    transition: transform 0.3s ease-out;
+}
+
+.bottom-panel {
+    flex: 0 0 100%;
+    height: 100%;
     background-color: var(--grey-superlight);
+}
+
+.home-menu {
     display: flex;
 }
 
@@ -379,6 +395,147 @@ button.trigger-play img {
     filter: invert(1);
 }
 
+/* Panel Metronome */
+.panel-metronome {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    padding-bottom: 40px;
+}
+
+.panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.panel-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.panel-title {
+    font-size: 22px;
+    letter-spacing: 2.42px;
+    line-height: 0.91;
+}
+
+.panel-subtitle {
+    font-size: 18px;
+    line-height: 0.91;
+    margin-top: 4px;
+}
+
+.panel-close-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.panel-close-btn img {
+    width: 24px;
+    height: 24px;
+}
+
+.panel-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Accents Module */
+.accents-module {
+    position: relative;
+    width: 100%;
+    max-width: 340px;
+}
+
+.accents-grid {
+    display: flex;
+    gap: 4px;
+    justify-content: space-between;
+}
+
+.accent-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    cursor: pointer;
+}
+
+.accent-cell {
+    height: 40px;
+    background-color: #1f74b5;
+    opacity: 0;
+    transition: opacity 0.1s ease;
+}
+
+.accent-cell.active {
+    opacity: 1;
+}
+
+.accents-lines {
+    position: absolute;
+    left: -8px;
+    right: -8px;
+    top: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+.accent-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: var(--black);
+}
+
+.accent-line-top {
+    top: 40px;
+}
+
+.accent-line-bottom {
+    top: 80px;
+}
+
+/* Panel Category Menu */
+.panel-category-menu {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-top: 16px;
+}
+
+.category-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.category-btn.active {
+    border: 1px solid var(--black);
+}
+
+.category-btn img {
+    width: 24px;
+    height: 24px;
+}
+
 /* Navigation menu */
 .home-menu-container {
     flex: 1;
@@ -396,6 +553,7 @@ button.trigger-play img {
     padding: 16px 12px;
     font-size: 24px;
     letter-spacing: 2.64px;
+    cursor: pointer;
 }
 
 /* ============ TEMPO OVERLAY ============ */
