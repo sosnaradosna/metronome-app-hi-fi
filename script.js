@@ -6,6 +6,14 @@ let currentTempo = 120;
 let editingTempo = '';
 let isFirstInput = true;
 
+// Metrum (time signature) state
+let currentNumerator = 4; // Beats per measure (1-32)
+let currentDenominator = 4; // Note value (1, 2, 4, 8, 16, 32, 64, 128)
+let editingNumerator = 4;
+let editingDenominator = 4;
+const NUMERATOR_VALUES = Array.from({ length: 32 }, (_, i) => i + 1); // 1 to 32
+const DENOMINATOR_VALUES = [1, 2, 4, 8, 16, 32, 64, 128];
+
 // Metronome state
 let isPlaying = false;
 let audioContext = null;
@@ -37,6 +45,24 @@ let tempoIncreaseBtn;
 let tempoDecreaseBtn;
 let tapButton;
 let tempoWheel;
+
+// Metrum overlay elements
+let metrumOverlay;
+let metrumWheelNumerator;
+let metrumWheelDenominator;
+let metrumPresetsGrid;
+let metrumConfirmBtn;
+let metrumValueElements;
+
+// Wheel drag state
+let activeWheel = null;
+let wheelDragStartY = 0;
+let wheelStartOffset = 0;
+let wheelCurrentOffset = 0;
+let wheelVelocity = 0;
+let wheelLastY = 0;
+let wheelLastTime = 0;
+let wheelMomentumId = null;
 
 // Clamp tempo to valid range
 function clampTempo(value) {
@@ -150,6 +176,7 @@ function handleWheelStart(clientX, clientY) {
     lastAngle = getAngleFromCenter(tempoWheel, clientX, clientY);
     lastMoveTime = performance.now();
     accumulatedTempoDelta = 0;
+    document.body.classList.add('dragging');
 }
 
 // Handle wheel drag move
@@ -203,6 +230,7 @@ function handleWheelMove(clientX, clientY) {
 // Handle wheel drag end
 function handleWheelEnd() {
     isDragging = false;
+    document.body.classList.remove('dragging');
 }
 
 // Open tempo overlay
@@ -258,6 +286,304 @@ function handleKeyInput(key) {
             }, 200);
         }
     }
+}
+
+// ============ METRUM OVERLAY ============
+
+const WHEEL_ITEM_HEIGHT = 52; // Height of each item including gap
+const VISIBLE_ITEMS = 5; // Number of visible items
+
+// Open metrum overlay
+function openMetrumOverlay() {
+    editingNumerator = currentNumerator;
+    editingDenominator = currentDenominator;
+    
+    // Build wheel items
+    buildWheelItems(metrumWheelNumerator, NUMERATOR_VALUES, editingNumerator);
+    buildWheelItems(metrumWheelDenominator, DENOMINATOR_VALUES, editingDenominator);
+    
+    // Update preset selection
+    updatePresetSelection();
+    
+    metrumOverlay.classList.add('active');
+}
+
+// Close metrum overlay
+function closeMetrumOverlay(save = false) {
+    if (save) {
+        currentNumerator = editingNumerator;
+        currentDenominator = editingDenominator;
+        beatsPerMeasure = currentNumerator;
+        updateMetrumDisplay();
+        restartMetronome();
+    }
+    metrumOverlay.classList.remove('active');
+    
+    // Cancel any ongoing momentum
+    if (wheelMomentumId) {
+        cancelAnimationFrame(wheelMomentumId);
+        wheelMomentumId = null;
+    }
+}
+
+// Update metrum display in the header
+function updateMetrumDisplay() {
+    if (metrumValueElements && metrumValueElements.length >= 2) {
+        metrumValueElements[0].textContent = currentNumerator;
+        metrumValueElements[1].textContent = currentDenominator;
+    }
+}
+
+// Build wheel items (repeated 4 times for looping effect)
+function buildWheelItems(wheelElement, values, selectedValue) {
+    const itemsContainer = wheelElement.querySelector('.metrum-wheel-items');
+    itemsContainer.innerHTML = '';
+    
+    // Store original values length for later use
+    wheelElement.dataset.originalLength = values.length;
+    
+    // Repeat values 4 times
+    const repeatedValues = [...values, ...values, ...values, ...values];
+    
+    // Find the second occurrence of the selected value (in the second set)
+    const baseIndex = values.indexOf(selectedValue);
+    const selectedIndex = values.length + baseIndex; // Position in second set
+    
+    repeatedValues.forEach((value, index) => {
+        const item = document.createElement('div');
+        item.className = 'metrum-wheel-item';
+        item.textContent = value;
+        item.dataset.value = value;
+        item.dataset.index = index;
+        itemsContainer.appendChild(item);
+    });
+    
+    // Set initial position to center the selected value
+    const offset = -selectedIndex * WHEEL_ITEM_HEIGHT;
+    wheelElement.dataset.offset = offset;
+    itemsContainer.style.transform = `translateY(${offset + (WHEEL_ITEM_HEIGHT * 2)}px)`;
+    
+    // Update visual styles
+    updateWheelStyles(wheelElement, selectedIndex);
+}
+
+// Update wheel item styles based on distance from center
+function updateWheelStyles(wheelElement, centerIndex) {
+    const items = wheelElement.querySelectorAll('.metrum-wheel-item');
+    
+    items.forEach((item, index) => {
+        const distance = Math.abs(index - centerIndex);
+        
+        if (distance === 0) {
+            item.style.fontSize = '40px';
+            item.style.opacity = '1';
+            item.style.transform = 'scale(1)';
+        } else if (distance === 1) {
+            item.style.fontSize = '36px';
+            item.style.opacity = '0.8';
+            item.style.transform = 'scale(0.9)';
+        } else if (distance === 2) {
+            item.style.fontSize = '24px';
+            item.style.opacity = '0.5';
+            item.style.transform = 'scale(0.8)';
+        } else {
+            item.style.fontSize = '20px';
+            item.style.opacity = '0.3';
+            item.style.transform = 'scale(0.7)';
+        }
+    });
+}
+
+// Get values array for a wheel (repeated 4 times)
+function getWheelValues(wheelElement) {
+    const baseValues = wheelElement.dataset.type === 'numerator' ? NUMERATOR_VALUES : DENOMINATOR_VALUES;
+    return [...baseValues, ...baseValues, ...baseValues, ...baseValues];
+}
+
+// Get original (non-repeated) values array for a wheel
+function getOriginalWheelValues(wheelElement) {
+    return wheelElement.dataset.type === 'numerator' ? NUMERATOR_VALUES : DENOMINATOR_VALUES;
+}
+
+// Handle wheel drag start
+function handleMetrumWheelStart(e, wheelElement) {
+    e.preventDefault();
+    
+    // Cancel any ongoing momentum
+    if (wheelMomentumId) {
+        cancelAnimationFrame(wheelMomentumId);
+        wheelMomentumId = null;
+    }
+    
+    activeWheel = wheelElement;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    wheelDragStartY = clientY;
+    wheelStartOffset = parseFloat(wheelElement.dataset.offset) || 0;
+    wheelCurrentOffset = wheelStartOffset;
+    wheelLastY = clientY;
+    wheelLastTime = performance.now();
+    wheelVelocity = 0;
+    
+    document.body.classList.add('dragging');
+}
+
+// Handle wheel drag move
+function handleMetrumWheelMove(e) {
+    if (!activeWheel) return;
+    
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const deltaY = clientY - wheelDragStartY;
+    const now = performance.now();
+    const dt = now - wheelLastTime;
+    
+    if (dt > 0) {
+        wheelVelocity = (clientY - wheelLastY) / dt;
+    }
+    
+    wheelLastY = clientY;
+    wheelLastTime = now;
+    
+    const values = getWheelValues(activeWheel);
+    const maxOffset = 0;
+    const minOffset = -(values.length - 1) * WHEEL_ITEM_HEIGHT;
+    
+    wheelCurrentOffset = Math.max(minOffset, Math.min(maxOffset, wheelStartOffset + deltaY));
+    
+    const itemsContainer = activeWheel.querySelector('.metrum-wheel-items');
+    itemsContainer.style.transform = `translateY(${wheelCurrentOffset + (WHEEL_ITEM_HEIGHT * 2)}px)`;
+    itemsContainer.style.transition = 'none';
+    
+    // Update styles based on current position
+    const currentIndex = Math.round(-wheelCurrentOffset / WHEEL_ITEM_HEIGHT);
+    updateWheelStyles(activeWheel, currentIndex);
+}
+
+// Handle wheel drag end
+function handleMetrumWheelEnd() {
+    if (!activeWheel) return;
+    
+    document.body.classList.remove('dragging');
+    
+    const values = getWheelValues(activeWheel);
+    
+    // Apply momentum if velocity is significant
+    if (Math.abs(wheelVelocity) > 0.3) {
+        applyWheelMomentum(activeWheel, values);
+    } else {
+        snapToNearestItem(activeWheel, values);
+    }
+    
+    activeWheel = null;
+}
+
+// Apply momentum scrolling
+function applyWheelMomentum(wheelElement, values) {
+    const friction = 0.95;
+    const minVelocity = 0.02;
+    
+    function animate() {
+        wheelVelocity *= friction;
+        
+        if (Math.abs(wheelVelocity) < minVelocity) {
+            snapToNearestItem(wheelElement, values);
+            return;
+        }
+        
+        const maxOffset = 0;
+        const minOffset = -(values.length - 1) * WHEEL_ITEM_HEIGHT;
+        
+        wheelCurrentOffset += wheelVelocity * 16; // ~16ms per frame
+        wheelCurrentOffset = Math.max(minOffset, Math.min(maxOffset, wheelCurrentOffset));
+        
+        const itemsContainer = wheelElement.querySelector('.metrum-wheel-items');
+        itemsContainer.style.transform = `translateY(${wheelCurrentOffset + (WHEEL_ITEM_HEIGHT * 2)}px)`;
+        itemsContainer.style.transition = 'none';
+        
+        const currentIndex = Math.round(-wheelCurrentOffset / WHEEL_ITEM_HEIGHT);
+        updateWheelStyles(wheelElement, currentIndex);
+        
+        // Check if we hit the bounds
+        if (wheelCurrentOffset === maxOffset || wheelCurrentOffset === minOffset) {
+            snapToNearestItem(wheelElement, values);
+            return;
+        }
+        
+        wheelMomentumId = requestAnimationFrame(animate);
+    }
+    
+    wheelMomentumId = requestAnimationFrame(animate);
+}
+
+// Snap to nearest item
+function snapToNearestItem(wheelElement, values) {
+    const nearestIndex = Math.round(-wheelCurrentOffset / WHEEL_ITEM_HEIGHT);
+    const clampedIndex = Math.max(0, Math.min(values.length - 1, nearestIndex));
+    const snappedOffset = -clampedIndex * WHEEL_ITEM_HEIGHT;
+    
+    wheelElement.dataset.offset = snappedOffset;
+    
+    const itemsContainer = wheelElement.querySelector('.metrum-wheel-items');
+    itemsContainer.style.transition = 'transform 0.2s ease-out';
+    itemsContainer.style.transform = `translateY(${snappedOffset + (WHEEL_ITEM_HEIGHT * 2)}px)`;
+    
+    updateWheelStyles(wheelElement, clampedIndex);
+    
+    // Get the actual value (from repeated array)
+    const selectedValue = values[clampedIndex];
+    if (wheelElement.dataset.type === 'numerator') {
+        editingNumerator = selectedValue;
+    } else {
+        editingDenominator = selectedValue;
+    }
+    
+    // Update preset selection
+    updatePresetSelection();
+}
+
+// Update preset selection based on current editing values
+function updatePresetSelection() {
+    const presets = metrumPresetsGrid.querySelectorAll('.metrum-preset');
+    presets.forEach(preset => {
+        const num = parseInt(preset.dataset.num);
+        const den = parseInt(preset.dataset.den);
+        if (num === editingNumerator && den === editingDenominator) {
+            preset.classList.add('selected');
+        } else {
+            preset.classList.remove('selected');
+        }
+    });
+}
+
+// Handle preset click
+function handlePresetClick(preset) {
+    editingNumerator = parseInt(preset.dataset.num);
+    editingDenominator = parseInt(preset.dataset.den);
+    
+    // Update wheels
+    scrollWheelToValue(metrumWheelNumerator, NUMERATOR_VALUES, editingNumerator);
+    scrollWheelToValue(metrumWheelDenominator, DENOMINATOR_VALUES, editingDenominator);
+    
+    // Update selection
+    updatePresetSelection();
+}
+
+// Scroll wheel to a specific value (positions in second set for looping effect)
+function scrollWheelToValue(wheelElement, baseValues, value) {
+    const baseIndex = baseValues.indexOf(value);
+    if (baseIndex === -1) return;
+    
+    // Position in the second set (for looping effect)
+    const index = baseValues.length + baseIndex;
+    
+    const offset = -index * WHEEL_ITEM_HEIGHT;
+    wheelElement.dataset.offset = offset;
+    wheelCurrentOffset = offset;
+    
+    const itemsContainer = wheelElement.querySelector('.metrum-wheel-items');
+    itemsContainer.style.transition = 'transform 0.3s ease-out';
+    itemsContainer.style.transform = `translateY(${offset + (WHEEL_ITEM_HEIGHT * 2)}px)`;
+    
+    updateWheelStyles(wheelElement, index);
 }
 
 // ============ METRONOME ============
@@ -401,6 +727,14 @@ document.addEventListener('DOMContentLoaded', () => {
     tempoDecreaseBtn = document.getElementById('tempoDecrease');
     tapButton = document.getElementById('tapButton');
     tempoWheel = document.getElementById('tempoWheel');
+    
+    // Metrum overlay elements
+    metrumOverlay = document.getElementById('metrumOverlay');
+    metrumWheelNumerator = document.getElementById('metrumWheelNumerator');
+    metrumWheelDenominator = document.getElementById('metrumWheelDenominator');
+    metrumPresetsGrid = document.getElementById('metrumPresetsGrid');
+    metrumConfirmBtn = document.getElementById('metrumConfirmBtn');
+    metrumValueElements = document.querySelectorAll('.metrum-value');
 
     // Play/Pause button
     if (playButton) {
@@ -422,8 +756,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Tempo wheel rotation
     if (tempoWheel) {
+        // Prevent default drag behavior
+        tempoWheel.addEventListener('dragstart', (e) => e.preventDefault());
+        
         // Mouse events
         tempoWheel.addEventListener('mousedown', (e) => {
+            e.preventDefault();
             handleWheelStart(e.clientX, e.clientY);
         });
         document.addEventListener('mousemove', (e) => {
@@ -433,6 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Touch events
         tempoWheel.addEventListener('touchstart', (e) => {
+            e.preventDefault();
             const touch = e.touches[0];
             handleWheelStart(touch.clientX, touch.clientY);
         });
@@ -475,4 +814,42 @@ document.addEventListener('DOMContentLoaded', () => {
             closeTempoOverlay(false);
         }
     });
+    
+    // ============ METRUM OVERLAY EVENTS ============
+    
+    // Click on metrum values to open overlay
+    metrumValueElements.forEach(el => {
+        el.addEventListener('click', openMetrumOverlay);
+    });
+    
+    // Metrum wheel events
+    [metrumWheelNumerator, metrumWheelDenominator].forEach(wheel => {
+        if (wheel) {
+            wheel.addEventListener('mousedown', (e) => handleMetrumWheelStart(e, wheel));
+            wheel.addEventListener('touchstart', (e) => handleMetrumWheelStart(e, wheel), { passive: false });
+        }
+    });
+    
+    document.addEventListener('mousemove', handleMetrumWheelMove);
+    document.addEventListener('touchmove', handleMetrumWheelMove, { passive: false });
+    document.addEventListener('mouseup', handleMetrumWheelEnd);
+    document.addEventListener('touchend', handleMetrumWheelEnd);
+    
+    // Metrum preset clicks
+    if (metrumPresetsGrid) {
+        metrumPresetsGrid.addEventListener('click', (e) => {
+            const preset = e.target.closest('.metrum-preset');
+            if (preset) {
+                handlePresetClick(preset);
+            }
+        });
+    }
+    
+    // Metrum confirm button
+    if (metrumConfirmBtn) {
+        metrumConfirmBtn.addEventListener('click', () => closeMetrumOverlay(true));
+    }
+    
+    // Metrum overlay can only be closed via the confirm button
+    // (no click-outside or keyboard shortcuts)
 });

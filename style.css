@@ -29,6 +29,14 @@ button {
     cursor: pointer;
     border: none;
     background: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Disable selection during wheel dragging */
+body.dragging {
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 a {
@@ -159,6 +167,8 @@ a {
     --wheel-rotation: 0deg;
     touch-action: none; /* Allow custom touch handling */
     cursor: grab;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .tempo-wheel-indicators:active {
@@ -457,4 +467,200 @@ button.trigger-play img {
 
 .tempo-key-confirm:active {
     background-color: #1a6299;
+}
+
+/* ============ METRUM OVERLAY ============ */
+.metrum-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(14, 16, 10, 0.92);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.metrum-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.metrum-overlay-content {
+    width: 100%;
+    max-width: 600px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.metrum-overlay-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+/* Metrum Picker Container */
+.metrum-picker {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 280px;
+}
+
+.metrum-wheel-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+}
+
+.metrum-wheel-slash {
+    font-size: 40px;
+    color: var(--white);
+    opacity: 0.7;
+    width: 34px;
+    text-align: center;
+    line-height: 1;
+}
+
+/* Individual Wheel */
+.metrum-wheel {
+    width: 80px;
+    height: 240px;
+    overflow: hidden;
+    position: relative;
+    cursor: grab;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: none;
+}
+
+.metrum-wheel:active {
+    cursor: grabbing;
+}
+
+.metrum-wheel-items {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.1s ease-out;
+}
+
+.metrum-wheel-item {
+    width: 80px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 40px;
+    line-height: 1.2;
+    transition: transform 0.15s ease, opacity 0.15s ease, font-size 0.15s ease;
+    flex-shrink: 0;
+}
+
+/* Center selection indicator */
+.metrum-picker-indicator {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 52px;
+    border-top: 1px solid rgba(248, 249, 246, 0.3);
+    border-bottom: 1px solid rgba(248, 249, 246, 0.3);
+    pointer-events: none;
+}
+
+/* Metrum Presets Section */
+.metrum-presets {
+    background-color: var(--grey-superlight);
+    padding: 20px;
+    padding-bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+}
+
+.metrum-presets-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.metrum-presets-title {
+    font-size: 22px;
+    letter-spacing: 2.42px;
+    color: var(--black);
+    line-height: 0.91;
+}
+
+.metrum-confirm-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.metrum-confirm-btn img {
+    width: 24px;
+    height: 24px;
+}
+
+.metrum-presets-grid {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    gap: 12px;
+    justify-content: center;
+    align-content: center;
+    flex: 1;
+}
+
+.metrum-preset {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 4px;
+    font-size: 20px;
+    font-family: inherit;
+    color: var(--black);
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--black);
+    cursor: pointer;
+    min-width: 97px;
+    transition: border-color 0.15s ease;
+}
+
+.metrum-preset.selected {
+    border: 2px solid #1f74b5;
+    border-bottom: 2px solid #1f74b5;
+}
+
+.metrum-preset:active {
+    opacity: 0.7;
+}
+
+/* Make metrum values clickable */
+.metrum-value {
+    cursor: pointer;
 }

@@ -138,6 +138,44 @@
         </div>
     </div>
 
+    <!-- Metrum Edit Overlay -->
+    <div class="metrum-overlay" id="metrumOverlay">
+        <div class="metrum-overlay-content">
+            <div class="metrum-overlay-display">
+                <div class="metrum-picker">
+                    <div class="metrum-wheel-container">
+                        <div class="metrum-wheel" id="metrumWheelNumerator" data-type="numerator">
+                            <div class="metrum-wheel-items"></div>
+                        </div>
+                        <div class="metrum-wheel-slash">/</div>
+                        <div class="metrum-wheel" id="metrumWheelDenominator" data-type="denominator">
+                            <div class="metrum-wheel-items"></div>
+                        </div>
+                    </div>
+                    <div class="metrum-picker-indicator"></div>
+                </div>
+            </div>
+            <div class="metrum-presets">
+                <div class="metrum-presets-header">
+                    <p class="metrum-presets-title">time signature</p>
+                    <button class="metrum-confirm-btn" id="metrumConfirmBtn">
+                        <img src="icons/ic_check/bold.svg" alt="Confirm">
+                    </button>
+                </div>
+                <div class="metrum-presets-grid" id="metrumPresetsGrid">
+                    <button class="metrum-preset" data-num="4" data-den="4">4 / 4</button>
+                    <button class="metrum-preset" data-num="2" data-den="4">2 / 4</button>
+                    <button class="metrum-preset" data-num="3" data-den="4">3 / 4</button>
+                    <button class="metrum-preset" data-num="5" data-den="4">5 / 4</button>
+                    <button class="metrum-preset" data-num="6" data-den="8">6 / 8</button>
+                    <button class="metrum-preset" data-num="7" data-den="8">7 / 8</button>
+                    <button class="metrum-preset" data-num="5" data-den="8">5 / 8</button>
+                    <button class="metrum-preset" data-num="9" data-den="8">9 / 8</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
