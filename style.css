@@ -209,16 +209,6 @@ a {
     pointer-events: none;
 }
 
-/* Enlarged touch target for tempo wheel */
-.tempo-wheel-indicators::after {
-    content: '';
-    position: absolute;
-    top: -12px;
-    left: -12px;
-    right: -12px;
-    bottom: -12px;
-    border-radius: 9999px;
-}
 
 /* Inner play container with solid border */
 .tempo-play-container {

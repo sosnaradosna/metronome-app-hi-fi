@@ -85,6 +85,7 @@ function increaseTempo() {
         currentTempo++;
         updateTempoDisplay(currentTempo);
         restartMetronome();
+        playWheelTick();
     }
 }
 
@@ -94,6 +95,7 @@ function decreaseTempo() {
         currentTempo--;
         updateTempoDisplay(currentTempo);
         restartMetronome();
+        playWheelTick();
     }
 }
 
