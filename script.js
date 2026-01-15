@@ -64,6 +64,7 @@ let wheelVelocity = 0;
 let wheelLastY = 0;
 let wheelLastTime = 0;
 let wheelMomentumId = null;
+let lastWheelIndex = -1; // Track last index for tick sound
 
 // Clamp tempo to valid range
 function clampTempo(value) {
@@ -425,6 +426,9 @@ function handleMetrumWheelStart(e, wheelElement) {
     wheelLastTime = performance.now();
     wheelVelocity = 0;
     
+    // Initialize last index for tick sounds
+    lastWheelIndex = Math.round(-wheelStartOffset / WHEEL_ITEM_HEIGHT);
+    
     document.body.classList.add('dragging');
 }
 
@@ -457,6 +461,12 @@ function handleMetrumWheelMove(e) {
     // Update styles based on current position
     const currentIndex = Math.round(-wheelCurrentOffset / WHEEL_ITEM_HEIGHT);
     updateWheelStyles(activeWheel, currentIndex);
+    
+    // Play tick when index changes
+    if (currentIndex !== lastWheelIndex) {
+        playWheelTick();
+        lastWheelIndex = currentIndex;
+    }
 }
 
 // Handle wheel drag end
@@ -502,6 +512,12 @@ function applyWheelMomentum(wheelElement, values) {
         
         const currentIndex = Math.round(-wheelCurrentOffset / WHEEL_ITEM_HEIGHT);
         updateWheelStyles(wheelElement, currentIndex);
+        
+        // Play tick when index changes during momentum
+        if (currentIndex !== lastWheelIndex) {
+            playWheelTick();
+            lastWheelIndex = currentIndex;
+        }
         
         // Check if we hit the bounds
         if (wheelCurrentOffset === maxOffset || wheelCurrentOffset === minOffset) {
@@ -763,6 +779,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Mouse events
         tempoWheel.addEventListener('mousedown', (e) => {
+            // Don't interfere with buttons inside the wheel
+            if (e.target.closest('button')) {
+                return;
+            }
             e.preventDefault();
             handleWheelStart(e.clientX, e.clientY);
         });
@@ -773,6 +793,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Touch events
         tempoWheel.addEventListener('touchstart', (e) => {
+            // Don't interfere with buttons inside the wheel
+            if (e.target.closest('button')) {
+                return;
+            }
             e.preventDefault();
             const touch = e.touches[0];
             handleWheelStart(touch.clientX, touch.clientY);

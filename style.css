@@ -209,6 +209,17 @@ a {
     pointer-events: none;
 }
 
+/* Enlarged touch target for tempo wheel */
+.tempo-wheel-indicators::after {
+    content: '';
+    position: absolute;
+    top: -12px;
+    left: -12px;
+    right: -12px;
+    bottom: -12px;
+    border-radius: 9999px;
+}
+
 /* Inner play container with solid border */
 .tempo-play-container {
     border: 2px solid var(--black);
@@ -257,12 +268,14 @@ button.trigger-play img {
     display: flex;
     align-items: center;
     margin-left: -48px;
-    z-index: 1;
 }
 
 .connection-line {
     margin-right: -16px;
     margin-top: -64px;
+    pointer-events: none;
+    position: relative;
+    z-index: 1;
 }
 
 .trigger-tap {
@@ -280,6 +293,20 @@ button.trigger-play img {
     touch-action: manipulation; /* Prevent double-tap zoom */
     -webkit-user-select: none;
     user-select: none;
+    position: relative;
+    z-index: 3;
+}
+
+/* Enlarged touch target for TAP button */
+.trigger-tap::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 80px;
+    min-height: 80px;
+    border-radius: 9999px;
 }
 
 /* ============ BOTTOM MENU SECTION ============ */
