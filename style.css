@@ -357,16 +357,41 @@ button.trigger-play img {
     left: 0;
     right: 0;
     bottom: 0;
-    display: flex;
-    transition: transform 0.3s ease-out;
 }
 
 .bottom-panel {
-    flex: 0 0 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     background-color: var(--grey-superlight);
     overflow: hidden;
+}
+
+/* Menu panel - base layer, slides left when detail panel is active */
+.bottom-panel.home-menu {
+    z-index: 1;
+    transform: translateX(0);
+    transition: transform 0.3s ease-out;
+}
+
+/* Detail panels - slide in from right */
+.bottom-panel.panel-metronome,
+.bottom-panel.panel-technique {
+    z-index: 2;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-out;
+}
+
+.bottom-panel.panel-metronome.active,
+.bottom-panel.panel-technique.active {
+    transform: translateX(0);
+}
+
+/* When detail panel is active, push menu to the left */
+.bottom-panel-track.panel-open .bottom-panel.home-menu {
+    transform: translateX(-100%);
 }
 
 .home-menu {
@@ -552,6 +577,44 @@ button.trigger-play img {
 
 .category-btn.active {
     border: 1px solid var(--black);
+}
+
+/* ============ TECHNIQUE PANEL ============ */
+.panel-technique {
+    display: flex;
+    flex-direction: column;
+    padding: 32px;
+    overflow: hidden;
+}
+
+/* Gap Intervals */
+.gap-intervals {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+}
+
+.gap-interval-box {
+    width: 120px;
+    height: 120px;
+    border: 1px solid var(--black);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.gap-interval-label {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.gap-interval-value {
+    font-size: 52px;
+    line-height: 1;
+    text-align: center;
 }
 
 .category-btn img {

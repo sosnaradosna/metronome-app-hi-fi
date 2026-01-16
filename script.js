@@ -1400,14 +1400,32 @@ document.addEventListener('DOMContentLoaded', () => {
 // Switch to a specific panel
 function switchToPanel(panelIndex) {
     currentPanel = panelIndex;
+    
+    // Get all detail panels
+    const metronomePanel = document.querySelector('.panel-metronome');
+    const techniquePanel = document.querySelector('.panel-technique');
+    
+    // Remove active from all detail panels
+    if (metronomePanel) metronomePanel.classList.remove('active');
+    if (techniquePanel) techniquePanel.classList.remove('active');
+    
+    // Toggle panel-open class on track to push menu
     if (panelTrack) {
-        panelTrack.style.transform = `translateX(-${panelIndex * 100}%)`;
+        if (panelIndex === 0) {
+            panelTrack.classList.remove('panel-open');
+        } else {
+            panelTrack.classList.add('panel-open');
+        }
     }
     
-    // Rebuild accents grid when opening metronome panel
-    if (panelIndex === 1) {
+    // Activate the appropriate panel
+    if (panelIndex === 1 && metronomePanel) {
+        metronomePanel.classList.add('active');
         buildAccentsGrid();
+    } else if (panelIndex === 2 && techniquePanel) {
+        techniquePanel.classList.add('active');
     }
+    // panelIndex === 0 means show menu (no detail panel active)
 }
 
 // ============ ACCENTS ============

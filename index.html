@@ -101,7 +101,7 @@
                     <div class="home-menu-container">
                         <nav class="navlinks-container">
                             <a href="#" class="nav-tab" data-panel="1">metronome</a>
-                            <a href="#" class="nav-tab">technique</a>
+                            <a href="#" class="nav-tab" data-panel="2">technique</a>
                             <a href="#" class="nav-tab">musicality</a>
                             <a href="#" class="nav-tab">live</a>
                             <a href="#" class="nav-tab">account</a>
@@ -136,10 +136,45 @@
                             <img src="icons/ic_accents.svg" alt="Accents">
                         </button>
                         <button class="category-btn">
-                            <img src="icons/ic_metronome.svg" alt="Metronome">
+                            <img src="icons/ic_audio.svg" alt="Audio">
                         </button>
                         <button class="category-btn">
                             <img src="icons/ic_sequencer.svg" alt="Sequencer">
+                        </button>
+                    </div>
+                </div>
+                <!-- Panel 2: Technique -->
+                <div class="bottom-panel panel-technique">
+                    <div class="panel-header">
+                        <div class="panel-header-left">
+                            <span class="panel-title">technique</span>
+                            <span class="panel-subtitle">gap trainer</span>
+                        </div>
+                        <button class="panel-close-btn" data-panel="0">
+                            <img src="icons/ic_close.svg" alt="Close">
+                        </button>
+                    </div>
+                    <div class="panel-content">
+                        <div class="gap-intervals">
+                            <div class="gap-interval-box">
+                                <span class="gap-interval-label">gap</span>
+                                <span class="gap-interval-value" id="gapValue">4</span>
+                            </div>
+                            <div class="gap-interval-box">
+                                <span class="gap-interval-label">click</span>
+                                <span class="gap-interval-value" id="clickValue">4</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-category-menu">
+                        <button class="category-btn active">
+                            <img src="icons/ic_gap.svg" alt="Gap">
+                        </button>
+                        <button class="category-btn">
+                            <img src="icons/ic_tempo-trainer.svg" alt="Tempo Trainer">
+                        </button>
+                        <button class="category-btn">
+                            <img src="icons/ic_polyrythm.svg" alt="Polyrhythm">
                         </button>
                     </div>
                 </div>
