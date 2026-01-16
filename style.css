@@ -1408,3 +1408,34 @@ button.trigger-play img {
     gap: 0;
 }
 
+/* ============ TOAST NOTIFICATION ============ */
+.toast {
+    position: fixed;
+    top: 8px;
+    left: 20px;
+    right: 20px;
+    transform: translateY(-150%);
+    background-color: var(--black);
+    color: var(--white);
+    padding: 16px 24px;
+    font-size: 16px;
+    letter-spacing: normal;
+    line-height: 150%;
+    z-index: 10000;
+    opacity: 0;
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+    text-align: left;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.toast.active {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* Highlight for available clickable elements */
+.highlight-available {
+    background-color: rgba(31, 116, 181, 0.1) !important;
+    transition: background-color 0.3s ease;
+}
+

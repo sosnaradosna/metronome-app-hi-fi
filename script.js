@@ -1,3 +1,105 @@
+// Toast notification
+let toastTimeout = null;
+let highlightTimeout = null;
+
+function showToast() {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    
+    // Clear any existing timeout
+    if (toastTimeout) {
+        clearTimeout(toastTimeout);
+    }
+    if (highlightTimeout) {
+        clearTimeout(highlightTimeout);
+    }
+    
+    // Show toast
+    toast.classList.add('active');
+    
+    // Highlight available clickable elements
+    highlightAvailableElements();
+    
+    // Hide after 2 seconds
+    toastTimeout = setTimeout(() => {
+        toast.classList.remove('active');
+    }, 2000);
+}
+
+function highlightAvailableElements() {
+    // Get all available/clickable elements
+    const availableElements = [
+        // 4th trigger icon (click sound)
+        document.querySelectorAll('.metronome-menu .trigger-icon')[3],
+        // Nav tabs: metronome and technique
+        ...Array.from(document.querySelectorAll('.nav-tab')).filter(tab => {
+            const text = tab.textContent.toLowerCase().trim();
+            return text === 'metronome' || text === 'technique';
+        }),
+        // Play button
+        document.getElementById('playButton'),
+        // Tempo trigger
+        document.querySelector('.trigger-tempo'),
+        // Metrum trigger
+        document.querySelector('.metrum'),
+        // Tap button
+        document.getElementById('tapButton'),
+        // Tempo wheel
+        document.querySelector('.tempo-wheel'),
+        // Tempo increase/decrease buttons
+        document.getElementById('tempoIncrease'),
+        document.getElementById('tempoDecrease'),
+        // Gap/click interval boxes
+        ...document.querySelectorAll('.gap-interval-box'),
+        // Tempo interval boxes
+        ...document.querySelectorAll('.tempo-interval-box'),
+        // Technique category buttons (gap and tempo, not polyrhythm)
+        ...Array.from(document.querySelectorAll('#techniqueCategoryMenu .category-btn')).filter(btn => {
+            const technique = btn.dataset.technique;
+            return technique === 'gap' || technique === 'tempo';
+        }),
+        // Accents grid items
+        ...document.querySelectorAll('.accent-item'),
+        // Sound tabs in click sound overlay
+        ...document.querySelectorAll('.sound-tab'),
+        // Sound tab play buttons
+        ...document.querySelectorAll('.sound-tab-play'),
+        // Confirm buttons in overlays
+        document.getElementById('clickSoundConfirmBtn'),
+        document.getElementById('metrumConfirmBtn'),
+        document.querySelector('.tempo-key-confirm'),
+        document.querySelector('.gap-key-confirm'),
+        // Panel close buttons
+        ...document.querySelectorAll('.panel-close-btn'),
+        // Metrum presets
+        ...document.querySelectorAll('.metrum-preset'),
+        // Metrum wheels
+        ...document.querySelectorAll('.metrum-wheel'),
+        // Tempo keyboard keys
+        ...document.querySelectorAll('.tempo-key'),
+        // Gap overlay keyboard keys
+        ...document.querySelectorAll('.gap-key'),
+        // Overlay backgrounds (clickable to close)
+        document.getElementById('tempoOverlay'),
+        document.getElementById('metrumOverlay'),
+        document.getElementById('gapOverlay'),
+        document.getElementById('clickSoundOverlay'),
+        // (Click sound category buttons are NOT available - they show toast)
+    ].filter(el => el); // Filter out null/undefined
+    
+    // Add highlight class
+    availableElements.forEach(el => {
+        el.classList.add('highlight-available');
+    });
+    
+    // Remove highlight after 1 second
+    highlightTimeout = setTimeout(() => {
+        availableElements.forEach(el => {
+            el.classList.remove('highlight-available');
+        });
+    }, 1000);
+}
+
 // Tempo management
 const MIN_TEMPO = 1;
 const MAX_TEMPO = 360;
@@ -745,9 +847,13 @@ function handleWheelItemClick(wheelElement, item) {
 
 // ============ TECHNIQUE MODE SWITCHING ============
 
-// Switch between technique modes (gap, tempo, polyrhythm)
+// Switch between technique modes (gap, tempo)
 function switchTechniqueMode(mode) {
     if (mode === currentTechniqueMode) return;
+    if (mode === 'polyrhythm') {
+        showToast();
+        return;
+    }
     
     // Stop metronome when switching technique modes
     if (isPlaying) {
@@ -1748,6 +1854,40 @@ document.addEventListener('DOMContentLoaded', () => {
             switchToPanel(targetPanel);
         });
     });
+    
+    // ============ TOAST NOTIFICATIONS FOR UNAVAILABLE FEATURES ============
+    
+    // First 3 trigger icons in metronome menu (indices 0, 1, 2)
+    const toastTriggerIcons = document.querySelectorAll('.metronome-menu .trigger-icon');
+    toastTriggerIcons.forEach((icon, index) => {
+        if (index < 3) { // First 3 icons
+            icon.addEventListener('click', showToast);
+        }
+    });
+    
+    // Nav tabs: musicality, live, account, settings (not metronome and technique)
+    const navTabs = document.querySelectorAll('.nav-tab');
+    navTabs.forEach(tab => {
+        const text = tab.textContent.toLowerCase().trim();
+        if (text === 'musicality' || text === 'live' || text === 'account' || text === 'settings') {
+            tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                showToast();
+            });
+        }
+    });
+    
+    // Category buttons in metronome panel (both buttons)
+    const metronomeCategoryBtns = document.querySelectorAll('.panel-metronome .panel-category-menu .category-btn');
+    metronomeCategoryBtns.forEach(btn => {
+        btn.addEventListener('click', showToast);
+    });
+    
+    // Category buttons in click sound overlay (both buttons)
+    const clickSoundCategoryBtns = document.querySelectorAll('.click-sound-category-menu .category-btn');
+    clickSoundCategoryBtns.forEach(btn => {
+        btn.addEventListener('click', showToast);
+    });
 });
 
 // Switch to a specific panel
@@ -1790,6 +1930,10 @@ function switchToPanel(panelIndex) {
         isInTechniquePanel = false;
     } else if (panelIndex === 2 && techniquePanel) {
         techniquePanel.classList.add('active');
+        // Stop metronome when entering technique panel
+        if (isPlaying) {
+            stopMetronome();
+        }
         isInTechniquePanel = true;
         // Reset tempo trainer state when entering technique panel
         tempoTrainerMeasureCount = 0;
