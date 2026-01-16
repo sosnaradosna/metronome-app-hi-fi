@@ -148,32 +148,51 @@
                     <div class="panel-header">
                         <div class="panel-header-left">
                             <span class="panel-title">technique</span>
-                            <span class="panel-subtitle">gap trainer</span>
+                            <span class="panel-subtitle" id="techniqueSubtitle">gap trainer</span>
                         </div>
                         <button class="panel-close-btn" data-panel="0">
                             <img src="icons/ic_close.svg" alt="Close">
                         </button>
                     </div>
                     <div class="panel-content">
-                        <div class="gap-intervals">
-                            <div class="gap-interval-box">
-                                <span class="gap-interval-label">gap</span>
-                                <span class="gap-interval-value" id="gapValue">4</span>
+                        <!-- Gap Trainer View -->
+                        <div class="technique-view gap-trainer-view active" id="gapTrainerView">
+                            <div class="gap-intervals">
+                                <div class="gap-interval-box" data-type="gap">
+                                    <span class="gap-interval-label">gap</span>
+                                    <span class="gap-interval-value" id="gapValue">4</span>
+                                </div>
+                                <div class="gap-interval-box" data-type="click">
+                                    <span class="gap-interval-label">click</span>
+                                    <span class="gap-interval-value" id="clickValue">4</span>
+                                </div>
                             </div>
-                            <div class="gap-interval-box">
-                                <span class="gap-interval-label">click</span>
-                                <span class="gap-interval-value" id="clickValue">4</span>
+                        </div>
+                        <!-- Tempo Trainer View -->
+                        <div class="technique-view tempo-trainer-view" id="tempoTrainerView">
+                            <div class="tempo-intervals">
+                                <div class="tempo-interval-box" data-type="jump">
+                                    <span class="tempo-interval-label">jump</span>
+                                    <div class="tempo-interval-value-container">
+                                        <span class="tempo-interval-value" id="jumpValue">5</span>
+                                        <span class="tempo-interval-unit">bpm</span>
+                                    </div>
+                                </div>
+                                <div class="tempo-interval-box" data-type="interval">
+                                    <span class="tempo-interval-label">interval</span>
+                                    <span class="tempo-interval-value" id="intervalValue">12</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="panel-category-menu">
-                        <button class="category-btn active">
+                    <div class="panel-category-menu" id="techniqueCategoryMenu">
+                        <button class="category-btn active" data-technique="gap">
                             <img src="icons/ic_gap.svg" alt="Gap">
                         </button>
-                        <button class="category-btn">
+                        <button class="category-btn" data-technique="tempo">
                             <img src="icons/ic_tempo-trainer.svg" alt="Tempo Trainer">
                         </button>
-                        <button class="category-btn">
+                        <button class="category-btn" data-technique="polyrhythm">
                             <img src="icons/ic_polyrythm.svg" alt="Polyrhythm">
                         </button>
                     </div>

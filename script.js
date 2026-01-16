@@ -96,6 +96,13 @@ let isInTechniquePanel = false;
 let gapTrainerBeatCount = 0; // Total beats since metronome started
 let warmupComplete = false; // Whether the warm-up measure is done
 
+// Tempo trainer state
+let jumpValue = 5;
+let intervalValue = 12;
+let currentTechniqueMode = 'gap'; // 'gap', 'tempo', 'polyrhythm'
+let tempoTrainerMeasureCount = 0;
+let tempoTrainerOriginalTempo = 120;
+
 // Gap overlay elements
 let gapOverlay;
 let gapOverlayValue;
@@ -736,12 +743,115 @@ function handleWheelItemClick(wheelElement, item) {
     updatePresetSelection();
 }
 
+// ============ TECHNIQUE MODE SWITCHING ============
+
+// Switch between technique modes (gap, tempo, polyrhythm)
+function switchTechniqueMode(mode) {
+    if (mode === currentTechniqueMode) return;
+    
+    // Stop metronome when switching technique modes
+    if (isPlaying) {
+        stopMetronome();
+    }
+    
+    // Restore original tempo if leaving tempo trainer mode
+    if (currentTechniqueMode === 'tempo') {
+        currentTempo = tempoTrainerOriginalTempo;
+        updateTempoDisplay(currentTempo);
+    }
+    
+    // Reset tempo trainer state if entering tempo trainer mode
+    if (mode === 'tempo') {
+        tempoTrainerMeasureCount = 0;
+        tempoTrainerOriginalTempo = currentTempo;
+    }
+    
+    // Reset gap trainer state if entering gap trainer mode
+    if (mode === 'gap') {
+        gapTrainerBeatCount = 0;
+        warmupComplete = false;
+    }
+    
+    const gapView = document.getElementById('gapTrainerView');
+    const tempoView = document.getElementById('tempoTrainerView');
+    const subtitle = document.getElementById('techniqueSubtitle');
+    const categoryMenu = document.getElementById('techniqueCategoryMenu');
+    
+    // Update category buttons
+    if (categoryMenu) {
+        const buttons = categoryMenu.querySelectorAll('.category-btn');
+        buttons.forEach(btn => {
+            if (btn.dataset.technique === mode) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+    
+    // Get current and next views
+    const currentView = currentTechniqueMode === 'gap' ? gapView : tempoView;
+    const nextView = mode === 'gap' ? gapView : tempoView;
+    
+    // Step 1: Fade out current view and subtitle
+    if (currentView) {
+        currentView.classList.remove('active');
+    }
+    if (subtitle) {
+        subtitle.style.opacity = '0';
+    }
+    
+    // Trigger shimmer effect immediately
+    const techniquePanel = document.querySelector('.panel-technique');
+    if (techniquePanel) {
+        techniquePanel.classList.remove('shimmer');
+        // Force reflow to restart animation
+        void techniquePanel.offsetWidth;
+        techniquePanel.classList.add('shimmer');
+    }
+
+    // Step 2: After fade out, update subtitle and fade in new view
+    setTimeout(() => {
+        // Update subtitle text
+        if (subtitle) {
+            if (mode === 'gap') {
+                subtitle.textContent = 'gap trainer';
+            } else if (mode === 'tempo') {
+                subtitle.textContent = 'tempo trainer';
+            } else if (mode === 'polyrhythm') {
+                subtitle.textContent = 'polyrhythm';
+            }
+            subtitle.style.opacity = '1';
+        }
+        
+        // Fade in new view
+        if (nextView) {
+            nextView.classList.add('active');
+        }
+    }, 300); // Wait for fade out to complete
+    
+    currentTechniqueMode = mode;
+}
+
 // ============ GAP VALUE OVERLAY ============
 
-// Open gap overlay for editing gap or click value
+// Open gap overlay for editing gap, click, jump, or interval value
 function openGapOverlay(type) {
     editingGapType = type;
-    editingGapValue = (type === 'gap' ? gapValue : clickValue).toString();
+    
+    // Get current value based on type
+    let currentValue;
+    if (type === 'gap') {
+        currentValue = gapValue;
+    } else if (type === 'click') {
+        currentValue = clickValue;
+    } else if (type === 'jump') {
+        currentValue = jumpValue;
+    } else if (type === 'interval') {
+        currentValue = intervalValue;
+    }
+    
+    editingGapValue = currentValue.toString();
     gapOverlayValue.textContent = editingGapValue;
     gapOverlayValue.classList.add('selected');
     gapOverlayLabel.textContent = type;
@@ -756,9 +866,15 @@ function closeGapOverlay(save = false) {
         if (editingGapType === 'gap') {
             gapValue = newValue;
             document.getElementById('gapValue').textContent = gapValue;
-        } else {
+        } else if (editingGapType === 'click') {
             clickValue = newValue;
             document.getElementById('clickValue').textContent = clickValue;
+        } else if (editingGapType === 'jump') {
+            jumpValue = newValue;
+            document.getElementById('jumpValue').textContent = jumpValue;
+        } else if (editingGapType === 'interval') {
+            intervalValue = newValue;
+            document.getElementById('intervalValue').textContent = intervalValue;
         }
     }
     gapOverlay.classList.remove('active');
@@ -766,16 +882,25 @@ function closeGapOverlay(save = false) {
     editingGapValue = '';
 }
 
+// Get max value based on type
+function getMaxValueForType(type) {
+    return type === 'jump' ? 99 : 999;
+}
+
 // Clamp gap value to valid range
-function clampGapValue(value) {
+function clampGapValue(value, type = editingGapType) {
     const num = parseInt(value, 10);
+    const maxValue = getMaxValueForType(type);
     if (isNaN(num) || num < MIN_GAP_VALUE) return MIN_GAP_VALUE;
-    if (num > MAX_GAP_VALUE) return MAX_GAP_VALUE;
+    if (num > maxValue) return maxValue;
     return num;
 }
 
 // Handle gap keyboard input
 function handleGapKeyInput(key) {
+    const maxValue = getMaxValueForType(editingGapType);
+    const maxDigits = editingGapType === 'jump' ? 2 : 3;
+    
     if (key === 'backspace') {
         editingGapValue = editingGapValue.slice(0, -1);
         gapOverlayValue.textContent = editingGapValue || '0';
@@ -789,7 +914,7 @@ function handleGapKeyInput(key) {
             editingGapValue = key;
             gapOverlayValue.classList.remove('selected');
             isFirstGapInput = false;
-        } else if (editingGapValue.length < 3) {
+        } else if (editingGapValue.length < maxDigits) {
             editingGapValue += key;
         }
         
@@ -797,10 +922,10 @@ function handleGapKeyInput(key) {
         gapOverlayValue.textContent = editingGapValue;
         
         // Dynamic validation with animation if exceeded
-        if (parseInt(editingGapValue, 10) > MAX_GAP_VALUE) {
+        if (parseInt(editingGapValue, 10) > maxValue) {
             gapOverlayValue.classList.add('shake');
             setTimeout(() => {
-                editingGapValue = MAX_GAP_VALUE.toString();
+                editingGapValue = maxValue.toString();
                 gapOverlayValue.textContent = editingGapValue;
                 gapOverlayValue.classList.remove('shake');
             }, 200);
@@ -952,6 +1077,7 @@ function initAudioContext() {
 // Check if current beat should be muted by gap trainer
 function shouldMuteForGapTrainer() {
     if (!isInTechniquePanel) return false;
+    if (currentTechniqueMode !== 'gap') return false; // Only apply in gap trainer mode
     if (!warmupComplete) return false;
     
     // Calculate position in the gap+click cycle
@@ -960,6 +1086,26 @@ function shouldMuteForGapTrainer() {
     
     // First 'gapValue' beats in cycle are muted
     return positionInCycle < gapValue;
+}
+
+// Handle tempo trainer measure completion
+function handleTempoTrainerMeasure() {
+    if (!isInTechniquePanel) return;
+    if (currentTechniqueMode !== 'tempo') return;
+    
+    tempoTrainerMeasureCount++;
+    
+    // Check if we've completed 'interval' measures
+    if (tempoTrainerMeasureCount >= intervalValue) {
+        tempoTrainerMeasureCount = 0;
+        
+        // Increase tempo by jump value, but don't exceed max
+        const newTempo = Math.min(currentTempo + jumpValue, MAX_TEMPO);
+        if (newTempo !== currentTempo) {
+            currentTempo = newTempo;
+            updateTempoDisplay(currentTempo);
+        }
+    }
 }
 
 // Play a click sound
@@ -1210,6 +1356,8 @@ function scheduleNextBeat() {
             if (isInTechniquePanel && !warmupComplete) {
                 warmupComplete = true;
             }
+            // Handle tempo trainer measure completion
+            handleTempoTrainerMeasure();
         }
         
         scheduleNextBeat();
@@ -1229,6 +1377,10 @@ function startMetronome() {
     // Reset gap trainer state
     gapTrainerBeatCount = 0;
     warmupComplete = false;
+    
+    // Reset tempo trainer state
+    tempoTrainerMeasureCount = 0;
+    tempoTrainerOriginalTempo = currentTempo;
     
     // Warmup: play silent click to initialize audio pipeline
     const warmupOsc = audioContext.createOscillator();
@@ -1264,6 +1416,12 @@ function stopMetronome() {
     if (playButtonIcon) {
         playButtonIcon.src = 'icons/ic_play/L.svg';
         playButtonIcon.alt = 'Play';
+    }
+    
+    // Reset tempo to original if stopping while in tempo trainer mode
+    if (isInTechniquePanel && currentTechniqueMode === 'tempo') {
+        currentTempo = tempoTrainerOriginalTempo;
+        updateTempoDisplay(currentTempo);
     }
 }
 
@@ -1430,11 +1588,32 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Gap interval box clicks
     const gapIntervalBoxes = document.querySelectorAll('.gap-interval-box');
-    gapIntervalBoxes.forEach((box, index) => {
+    gapIntervalBoxes.forEach((box) => {
         box.addEventListener('click', () => {
-            openGapOverlay(index === 0 ? 'gap' : 'click');
+            const type = box.dataset.type;
+            openGapOverlay(type);
         });
     });
+    
+    // Tempo interval box clicks
+    const tempoIntervalBoxes = document.querySelectorAll('.tempo-interval-box');
+    tempoIntervalBoxes.forEach((box) => {
+        box.addEventListener('click', () => {
+            const type = box.dataset.type;
+            openGapOverlay(type);
+        });
+    });
+    
+    // Technique category menu clicks
+    const techniqueCategoryMenu = document.getElementById('techniqueCategoryMenu');
+    if (techniqueCategoryMenu) {
+        techniqueCategoryMenu.addEventListener('click', (e) => {
+            const btn = e.target.closest('.category-btn');
+            if (btn && btn.dataset.technique) {
+                switchTechniqueMode(btn.dataset.technique);
+            }
+        });
+    }
     
     // Gap keyboard clicks
     gapKeys.forEach(key => {
@@ -1592,16 +1771,39 @@ function switchToPanel(panelIndex) {
         }
     }
     
+    // Check if we're leaving technique panel
+    const wasInTechniquePanel = isInTechniquePanel;
+    const wasInTempoTrainer = isInTechniquePanel && currentTechniqueMode === 'tempo';
+    
     // Activate the appropriate panel
     if (panelIndex === 1 && metronomePanel) {
         metronomePanel.classList.add('active');
         buildAccentsGrid();
+        // Stop metronome when leaving technique panel
+        if (wasInTechniquePanel && isPlaying) {
+            stopMetronome();
+        }
+        if (wasInTempoTrainer) {
+            currentTempo = tempoTrainerOriginalTempo;
+            updateTempoDisplay(currentTempo);
+        }
         isInTechniquePanel = false;
     } else if (panelIndex === 2 && techniquePanel) {
         techniquePanel.classList.add('active');
         isInTechniquePanel = true;
+        // Reset tempo trainer state when entering technique panel
+        tempoTrainerMeasureCount = 0;
+        tempoTrainerOriginalTempo = currentTempo;
     } else {
         // panelIndex === 0 means show menu (no detail panel active)
+        // Stop metronome when leaving technique panel
+        if (wasInTechniquePanel && isPlaying) {
+            stopMetronome();
+        }
+        if (wasInTempoTrainer) {
+            currentTempo = tempoTrainerOriginalTempo;
+            updateTempoDisplay(currentTempo);
+        }
         isInTechniquePanel = false;
     }
 }

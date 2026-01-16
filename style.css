@@ -585,6 +585,7 @@ button.trigger-play img {
     flex-direction: column;
     padding: 32px;
     overflow: hidden;
+    position: relative;
 }
 
 /* Gap Intervals */
@@ -619,6 +620,115 @@ button.trigger-play img {
 
 .gap-interval-box {
     cursor: pointer;
+}
+
+/* Technique Views - Animated transitions */
+.technique-view {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.technique-view.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.panel-technique .panel-content {
+    position: relative;
+}
+
+/* Shimmer effect for technique panel */
+.panel-technique::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -150%;
+    width: 80px;
+    height: 250%;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.15) 30%,
+        rgba(255, 255, 255, 0.35) 50%,
+        rgba(255, 255, 255, 0.15) 70%,
+        transparent 100%
+    );
+    pointer-events: none;
+    z-index: 10;
+    transform: rotate(25deg);
+    opacity: 0;
+}
+
+.panel-technique.shimmer::after {
+    animation: shimmer 1s ease-in-out;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -150%;
+        opacity: 1;
+    }
+    100% {
+        left: 150%;
+        opacity: 1;
+    }
+}
+
+/* Tempo Trainer Intervals */
+.tempo-intervals {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+}
+
+.tempo-interval-box {
+    width: 120px;
+    height: 120px;
+    border: 1px solid var(--black);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.tempo-interval-label {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.tempo-interval-value-container {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    padding-left: 19px;
+}
+
+.tempo-interval-value {
+    font-size: 52px;
+    line-height: 1;
+    text-align: center;
+}
+
+.tempo-interval-unit {
+    font-size: 10px;
+    line-height: 1;
+}
+
+/* Subtitle transition */
+.panel-subtitle {
+    transition: opacity 0.2s ease;
 }
 
 /* ============ GAP VALUE OVERLAY ============ */
