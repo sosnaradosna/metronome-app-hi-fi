@@ -176,6 +176,7 @@ a {
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
 }
 
 .trigger-icon img {
@@ -931,5 +932,179 @@ button.trigger-play img {
 
 .metrum-preset:active {
     opacity: 0.7;
+}
+
+/* ============ CLICK SOUND OVERLAY ============ */
+.click-sound-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(14, 16, 10, 0.92);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.click-sound-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.click-sound-overlay-content {
+    width: 100%;
+    max-width: 600px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.click-sound-overlay-top {
+    flex: 1;
+}
+
+.click-sound-bottom-sheet {
+    background-color: var(--grey-superlight);
+    padding: 20px;
+    padding-bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.click-sound-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.click-sound-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.click-sound-title {
+    font-size: 22px;
+    letter-spacing: 2.42px;
+    line-height: 0.91;
+}
+
+.click-sound-subtitle {
+    font-size: 18px;
+    line-height: 0.91;
+    margin-top: 4px;
+}
+
+.click-sound-confirm-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    position: relative;
+}
+
+.click-sound-confirm-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 60px;
+    min-height: 60px;
+}
+
+.click-sound-confirm-btn img {
+    width: 24px;
+    height: 24px;
+}
+
+/* Sound Grid */
+.click-sound-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 20px 0;
+}
+
+/* Sound Tab */
+.sound-tab {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.15s ease;
+}
+
+.sound-tab.selected {
+    border: 2px solid #1f74b5;
+}
+
+.sound-tab-content {
+    display: flex;
+    flex: 1;
+    align-items: flex-end;
+    min-width: 0;
+}
+
+.sound-tab-name {
+    font-size: 18px;
+    line-height: 0.91;
+    color: var(--black);
+    white-space: nowrap;
+}
+
+.sound-tab-line {
+    flex: 1;
+    height: 1px;
+    background-color: var(--black);
+    margin-bottom: 2px;
+}
+
+.sound-tab.selected .sound-tab-line {
+    background-color: #1f74b5;
+}
+
+.sound-tab-play {
+    width: 36px;
+    height: 36px;
+    background-color: var(--black);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sound-tab.selected .sound-tab-play {
+    background-color: #1f74b5;
+}
+
+.sound-tab-play img {
+    width: 24px;
+    height: 24px;
+    filter: invert(1);
+}
+
+/* Click Sound Category Menu */
+.click-sound-category-menu {
+    display: flex;
+    justify-content: center;
+    gap: 0;
 }
 

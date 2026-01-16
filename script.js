@@ -55,6 +55,12 @@ let metrumConfirmBtn;
 let metrumValueElements;
 let metrumTrigger;
 
+// Click sound overlay elements
+let clickSoundOverlay;
+let clickSoundGrid;
+let clickSoundConfirmBtn;
+let clickSoundTrigger;
+
 // Visual feedback element
 let beatLine;
 
@@ -69,6 +75,12 @@ let accentDragStartY = 0;
 let accentDragBeat = -1;
 let accentDragStartLevel = 0;
 let accentDidDrag = false;
+
+// Click sound state
+let currentClickSound = 'stick';
+let editingClickSound = 'stick';
+const CLICK_SOUNDS = ['stick', 'cowbell', 'voice', 'wood', 'hi-hat', 'pluck'];
+let wasPlayingBeforeOverlay = false; // Track if metronome was playing when overlay opened
 
 // Wheel drag state
 let activeWheel = null;
@@ -704,6 +716,127 @@ function handleWheelItemClick(wheelElement, item) {
     updatePresetSelection();
 }
 
+// ============ CLICK SOUND OVERLAY ============
+
+// Open click sound overlay
+function openClickSoundOverlay() {
+    editingClickSound = currentClickSound;
+    previewingSound = null; // Reset preview state
+    wasPlayingBeforeOverlay = isPlaying; // Remember if metronome was playing
+    updateClickSoundSelection();
+    updateSoundTabPlayButtonsState(); // Show current state
+    clickSoundOverlay.classList.add('active');
+}
+
+// Close click sound overlay
+function closeClickSoundOverlay(save = false) {
+    // Clear preview
+    previewingSound = null;
+    
+    if (save) {
+        currentClickSound = editingClickSound;
+    }
+    
+    // If metronome wasn't playing when we opened the overlay, stop it now
+    if (!wasPlayingBeforeOverlay && isPlaying) {
+        stopMetronome();
+    }
+    
+    clickSoundOverlay.classList.remove('active');
+}
+
+// Update click sound selection in the grid
+function updateClickSoundSelection() {
+    if (!clickSoundGrid) return;
+    
+    const tabs = clickSoundGrid.querySelectorAll('.sound-tab');
+    tabs.forEach(tab => {
+        if (tab.dataset.sound === editingClickSound) {
+            tab.classList.add('selected');
+        } else {
+            tab.classList.remove('selected');
+        }
+    });
+}
+
+// Handle sound tab click (selecting a tab)
+function handleSoundTabClick(tab) {
+    const sound = tab.dataset.sound;
+    if (sound) {
+        editingClickSound = sound;
+        updateClickSoundSelection();
+        
+        // If metronome is playing, also switch to this sound
+        if (isPlaying) {
+            previewingSound = sound;
+            updateSoundTabPlayButtonsState(true);
+        }
+    }
+}
+
+// Track which sound is being previewed with the metronome
+let previewingSound = null;
+
+// Toggle metronome preview for a specific sound (play button only - no selection change)
+function toggleSoundPreview(sound) {
+    if (!audioContext) {
+        initAudioContext();
+    }
+    
+    if (audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+    
+    // Get currently active sound (preview or current)
+    const activeSound = previewingSound || currentClickSound;
+    
+    if (!isPlaying) {
+        // Metronome not playing - start it with this sound as preview (no selection change)
+        previewingSound = sound;
+        startMetronome();
+        updateSoundTabPlayButtonsState(true);
+    } else if (activeSound === sound) {
+        // Clicking pause on currently playing sound - stop the metronome
+        stopMetronome();
+        previewingSound = null;
+        updateSoundTabPlayButtonsState(false);
+    } else {
+        // Preview a different sound without selecting it
+        previewingSound = sound;
+        updateSoundTabPlayButtonsState(true);
+    }
+}
+
+// Update all sound tab play button icons based on current state
+// playingOverride: if provided, use this instead of isPlaying (for timing issues)
+function updateSoundTabPlayButtonsState(playingOverride) {
+    if (!clickSoundGrid) return;
+    
+    const playing = playingOverride !== undefined ? playingOverride : isPlaying;
+    
+    // Determine which sound is currently "active" (playing)
+    const activeSound = playing ? (previewingSound || currentClickSound) : null;
+    
+    const tabs = clickSoundGrid.querySelectorAll('.sound-tab');
+    tabs.forEach(tab => {
+        const playBtn = tab.querySelector('.sound-tab-play img');
+        if (!playBtn) return;
+        
+        if (activeSound && tab.dataset.sound === activeSound) {
+            playBtn.src = 'icons/ic_pause.svg';
+            playBtn.alt = 'Pause';
+        } else {
+            playBtn.src = 'icons/ic_play/M.svg';
+            playBtn.alt = 'Play';
+        }
+    });
+}
+
+// Update all sound tab play button icons
+function updateSoundTabPlayButtons() {
+    updateSoundTabPlayButtonsState();
+}
+
 // ============ METRONOME ============
 
 // Initialize Audio Context (must be called after user interaction)
@@ -726,6 +859,13 @@ function initAudioContext() {
 
 // Play a click sound
 function playClick(accentLevel) {
+    // Use previewing sound if in preview mode, otherwise use current sound
+    const soundToPlay = previewingSound || currentClickSound;
+    playClickWithSound(soundToPlay, accentLevel);
+}
+
+// Play a click sound with a specific sound type
+function playClickWithSound(sound, accentLevel) {
     // accentLevel: 0 = silent, 1 = ghost, 2 = normal, 3 = accent
     if (accentLevel === 0) {
         // Silent - still show visual but no sound
@@ -733,32 +873,180 @@ function playClick(accentLevel) {
         return;
     }
     
-    const osc = audioContext.createOscillator();
-    const envelope = audioContext.createGain();
-
-    // Frequency and volume based on accent level
+    const now = audioContext.currentTime;
+    
+    // Base volume based on accent level
+    let baseVolume;
     if (accentLevel === 3) {
-        osc.frequency.value = 1500;
-        envelope.gain.value = 0.7;
+        baseVolume = 0.7;
     } else if (accentLevel === 2) {
-        osc.frequency.value = 1000;
-        envelope.gain.value = 0.4;
+        baseVolume = 0.4;
     } else {
-        // Ghost note (level 1) - same as normal but quieter
-        osc.frequency.value = 1000;
-        envelope.gain.value = 0.12;
+        baseVolume = 0.12;
     }
     
-    envelope.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
-
-    osc.connect(envelope);
-    envelope.connect(audioContext.destination);
-
-    osc.start(audioContext.currentTime);
-    osc.stop(audioContext.currentTime + 0.05);
+    switch (sound) {
+        case 'stick':
+            playStickSound(now, baseVolume, accentLevel);
+            break;
+        case 'cowbell':
+            playCowbellSound(now, baseVolume, accentLevel);
+            break;
+        case 'voice':
+            playVoiceSound(now, baseVolume, accentLevel);
+            break;
+        case 'wood':
+            playWoodSound(now, baseVolume, accentLevel);
+            break;
+        case 'hi-hat':
+            playHiHatSound(now, baseVolume, accentLevel);
+            break;
+        case 'pluck':
+            playPluckSound(now, baseVolume, accentLevel);
+            break;
+        default:
+            playStickSound(now, baseVolume, accentLevel);
+    }
     
     // Visual beat flash - LED style
     showBeatFlash(accentLevel === 3);
+}
+
+// Stick sound - classic metronome click
+function playStickSound(now, volume, accentLevel) {
+    const osc = audioContext.createOscillator();
+    const envelope = audioContext.createGain();
+    
+    osc.frequency.value = accentLevel === 3 ? 1500 : 1000;
+    envelope.gain.value = volume;
+    envelope.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+    
+    osc.connect(envelope);
+    envelope.connect(audioContext.destination);
+    osc.start(now);
+    osc.stop(now + 0.05);
+}
+
+// Cowbell sound - metallic ring
+function playCowbellSound(now, volume, accentLevel) {
+    // Main tone
+    const osc1 = audioContext.createOscillator();
+    const osc2 = audioContext.createOscillator();
+    const envelope = audioContext.createGain();
+    
+    osc1.type = 'square';
+    osc1.frequency.value = accentLevel === 3 ? 800 : 587;
+    osc2.type = 'square';
+    osc2.frequency.value = accentLevel === 3 ? 540 : 420;
+    
+    envelope.gain.value = volume * 0.4;
+    envelope.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    
+    osc1.connect(envelope);
+    osc2.connect(envelope);
+    envelope.connect(audioContext.destination);
+    
+    osc1.start(now);
+    osc2.start(now);
+    osc1.stop(now + 0.15);
+    osc2.stop(now + 0.15);
+}
+
+// Voice sound - vocal "ta" click
+function playVoiceSound(now, volume, accentLevel) {
+    const bufferSize = audioContext.sampleRate * 0.08;
+    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+    const data = buffer.getChannelData(0);
+    
+    // Create a short noise burst filtered to sound voice-like
+    for (let i = 0; i < bufferSize; i++) {
+        const t = i / audioContext.sampleRate;
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 40);
+    }
+    
+    const noise = audioContext.createBufferSource();
+    noise.buffer = buffer;
+    
+    const filter = audioContext.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = accentLevel === 3 ? 2000 : 1500;
+    filter.Q.value = 2;
+    
+    const envelope = audioContext.createGain();
+    envelope.gain.value = volume * 1.2;
+    
+    noise.connect(filter);
+    filter.connect(envelope);
+    envelope.connect(audioContext.destination);
+    noise.start(now);
+}
+
+// Wood sound - wooden block
+function playWoodSound(now, volume, accentLevel) {
+    const osc = audioContext.createOscillator();
+    const envelope = audioContext.createGain();
+    
+    osc.type = 'triangle';
+    osc.frequency.value = accentLevel === 3 ? 800 : 600;
+    osc.frequency.exponentialRampToValueAtTime(200, now + 0.03);
+    
+    envelope.gain.value = volume * 0.8;
+    envelope.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+    
+    osc.connect(envelope);
+    envelope.connect(audioContext.destination);
+    osc.start(now);
+    osc.stop(now + 0.06);
+}
+
+// Hi-hat sound - cymbal-like
+function playHiHatSound(now, volume, accentLevel) {
+    const bufferSize = audioContext.sampleRate * 0.1;
+    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+    const data = buffer.getChannelData(0);
+    
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+    
+    const noise = audioContext.createBufferSource();
+    noise.buffer = buffer;
+    
+    const highpass = audioContext.createBiquadFilter();
+    highpass.type = 'highpass';
+    highpass.frequency.value = accentLevel === 3 ? 8000 : 6000;
+    
+    const envelope = audioContext.createGain();
+    envelope.gain.value = volume * 0.5;
+    envelope.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    
+    noise.connect(highpass);
+    highpass.connect(envelope);
+    envelope.connect(audioContext.destination);
+    noise.start(now);
+}
+
+// Pluck sound - string-like
+function playPluckSound(now, volume, accentLevel) {
+    const osc = audioContext.createOscillator();
+    const envelope = audioContext.createGain();
+    
+    osc.type = 'sawtooth';
+    osc.frequency.value = accentLevel === 3 ? 440 : 330;
+    
+    envelope.gain.value = volume * 0.6;
+    envelope.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    
+    const filter = audioContext.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 2000;
+    filter.frequency.exponentialRampToValueAtTime(500, now + 0.1);
+    
+    osc.connect(filter);
+    filter.connect(envelope);
+    envelope.connect(audioContext.destination);
+    osc.start(now);
+    osc.stop(now + 0.12);
 }
 
 function showBeatFlash(isAccent) {
@@ -988,6 +1276,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // ============ CLICK SOUND OVERLAY ELEMENTS ============
+    
+    clickSoundOverlay = document.getElementById('clickSoundOverlay');
+    clickSoundGrid = document.getElementById('clickSoundGrid');
+    clickSoundConfirmBtn = document.getElementById('clickSoundConfirmBtn');
+    
+    // The 4th trigger-icon is the click sound trigger (index 3)
+    const triggerIcons = document.querySelectorAll('.metronome-menu .trigger-icon');
+    if (triggerIcons.length >= 4) {
+        clickSoundTrigger = triggerIcons[3];
+    }
+    
     // ============ METRUM OVERLAY EVENTS ============
     
     // Click on metrum container to open overlay
@@ -1034,6 +1334,48 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Metrum overlay can only be closed via the confirm button
     // (no click-outside or keyboard shortcuts)
+    
+    // ============ CLICK SOUND OVERLAY EVENTS ============
+    
+    // Click on click sound trigger to open overlay
+    if (clickSoundTrigger) {
+        clickSoundTrigger.addEventListener('click', openClickSoundOverlay);
+    }
+    
+    // Click sound tab clicks
+    if (clickSoundGrid) {
+        clickSoundGrid.addEventListener('click', (e) => {
+            const playBtn = e.target.closest('.sound-tab-play');
+            const tab = e.target.closest('.sound-tab');
+            
+            if (playBtn && tab) {
+                // Clicked on play button - toggle metronome preview with this sound
+                e.stopPropagation();
+                const sound = tab.dataset.sound;
+                if (sound) {
+                    toggleSoundPreview(sound);
+                }
+            } else if (tab) {
+                // Clicked on tab - select it
+                handleSoundTabClick(tab);
+            }
+        });
+    }
+    
+    // Click sound confirm button
+    if (clickSoundConfirmBtn) {
+        clickSoundConfirmBtn.addEventListener('click', () => closeClickSoundOverlay(true));
+    }
+    
+    // Close click sound overlay when clicking outside the bottom sheet (on dark background)
+    if (clickSoundOverlay) {
+        clickSoundOverlay.addEventListener('click', (e) => {
+            // Close if click is not inside the bottom sheet
+            if (!e.target.closest('.click-sound-bottom-sheet')) {
+                closeClickSoundOverlay(false);
+            }
+        });
+    }
     
     // ============ PANEL SLIDER ============
     
