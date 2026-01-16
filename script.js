@@ -79,7 +79,7 @@ let accentDidDrag = false;
 // Click sound state
 let currentClickSound = 'stick';
 let editingClickSound = 'stick';
-const CLICK_SOUNDS = ['stick', 'cowbell', 'voice', 'wood', 'hi-hat', 'pluck'];
+const CLICK_SOUNDS = ['stick', 'cowbell', 'noise', 'wood', 'hi-hat', 'pluck'];
 let wasPlayingBeforeOverlay = false; // Track if metronome was playing when overlay opened
 
 // Wheel drag state
@@ -892,8 +892,8 @@ function playClickWithSound(sound, accentLevel) {
         case 'cowbell':
             playCowbellSound(now, baseVolume, accentLevel);
             break;
-        case 'voice':
-            playVoiceSound(now, baseVolume, accentLevel);
+        case 'noise':
+            playNoiseSound(now, baseVolume, accentLevel);
             break;
         case 'wood':
             playWoodSound(now, baseVolume, accentLevel);
@@ -952,28 +952,30 @@ function playCowbellSound(now, volume, accentLevel) {
     osc2.stop(now + 0.15);
 }
 
-// Voice sound - vocal "ta" click
-function playVoiceSound(now, volume, accentLevel) {
-    const bufferSize = audioContext.sampleRate * 0.08;
+// Noise sound - white noise burst (like hi-hat but different character)
+function playNoiseSound(now, volume, accentLevel) {
+    const duration = accentLevel === 3 ? 0.08 : 0.05;
+    const bufferSize = audioContext.sampleRate * duration;
     const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
     const data = buffer.getChannelData(0);
     
-    // Create a short noise burst filtered to sound voice-like
+    // Generate white noise
     for (let i = 0; i < bufferSize; i++) {
-        const t = i / audioContext.sampleRate;
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 40);
+        data[i] = Math.random() * 2 - 1;
     }
     
     const noise = audioContext.createBufferSource();
     noise.buffer = buffer;
     
+    // Bandpass filter for character
     const filter = audioContext.createBiquadFilter();
     filter.type = 'bandpass';
-    filter.frequency.value = accentLevel === 3 ? 2000 : 1500;
-    filter.Q.value = 2;
+    filter.frequency.value = accentLevel === 3 ? 4000 : 3000;
+    filter.Q.value = 1.5;
     
     const envelope = audioContext.createGain();
-    envelope.gain.value = volume * 1.2;
+    envelope.gain.setValueAtTime(volume * 0.8, now);
+    envelope.gain.exponentialRampToValueAtTime(0.001, now + duration);
     
     noise.connect(filter);
     filter.connect(envelope);
