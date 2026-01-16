@@ -82,6 +82,26 @@ let editingClickSound = 'stick';
 const CLICK_SOUNDS = ['stick', 'cowbell', 'noise', 'wood', 'hi-hat', 'pluck'];
 let wasPlayingBeforeOverlay = false; // Track if metronome was playing when overlay opened
 
+// Gap trainer state
+let gapValue = 4;
+let clickValue = 4;
+let editingGapValue = '';
+let editingGapType = 'gap'; // 'gap' or 'click'
+let isFirstGapInput = true;
+const MIN_GAP_VALUE = 1;
+const MAX_GAP_VALUE = 999;
+
+// Gap trainer runtime state
+let isInTechniquePanel = false;
+let gapTrainerBeatCount = 0; // Total beats since metronome started
+let warmupComplete = false; // Whether the warm-up measure is done
+
+// Gap overlay elements
+let gapOverlay;
+let gapOverlayValue;
+let gapOverlayLabel;
+let gapKeys;
+
 // Wheel drag state
 let activeWheel = null;
 let wheelDragStartY = 0;
@@ -716,6 +736,78 @@ function handleWheelItemClick(wheelElement, item) {
     updatePresetSelection();
 }
 
+// ============ GAP VALUE OVERLAY ============
+
+// Open gap overlay for editing gap or click value
+function openGapOverlay(type) {
+    editingGapType = type;
+    editingGapValue = (type === 'gap' ? gapValue : clickValue).toString();
+    gapOverlayValue.textContent = editingGapValue;
+    gapOverlayValue.classList.add('selected');
+    gapOverlayLabel.textContent = type;
+    isFirstGapInput = true;
+    gapOverlay.classList.add('active');
+}
+
+// Close gap overlay
+function closeGapOverlay(save = false) {
+    if (save && editingGapValue.length > 0) {
+        const newValue = clampGapValue(editingGapValue);
+        if (editingGapType === 'gap') {
+            gapValue = newValue;
+            document.getElementById('gapValue').textContent = gapValue;
+        } else {
+            clickValue = newValue;
+            document.getElementById('clickValue').textContent = clickValue;
+        }
+    }
+    gapOverlay.classList.remove('active');
+    gapOverlayValue.classList.remove('selected');
+    editingGapValue = '';
+}
+
+// Clamp gap value to valid range
+function clampGapValue(value) {
+    const num = parseInt(value, 10);
+    if (isNaN(num) || num < MIN_GAP_VALUE) return MIN_GAP_VALUE;
+    if (num > MAX_GAP_VALUE) return MAX_GAP_VALUE;
+    return num;
+}
+
+// Handle gap keyboard input
+function handleGapKeyInput(key) {
+    if (key === 'backspace') {
+        editingGapValue = editingGapValue.slice(0, -1);
+        gapOverlayValue.textContent = editingGapValue || '0';
+        gapOverlayValue.classList.remove('selected');
+        isFirstGapInput = false;
+    } else if (key === 'confirm') {
+        closeGapOverlay(true);
+    } else {
+        // Number key - clear on first input (like selected text)
+        if (isFirstGapInput) {
+            editingGapValue = key;
+            gapOverlayValue.classList.remove('selected');
+            isFirstGapInput = false;
+        } else if (editingGapValue.length < 3) {
+            editingGapValue += key;
+        }
+        
+        // Show what user typed first
+        gapOverlayValue.textContent = editingGapValue;
+        
+        // Dynamic validation with animation if exceeded
+        if (parseInt(editingGapValue, 10) > MAX_GAP_VALUE) {
+            gapOverlayValue.classList.add('shake');
+            setTimeout(() => {
+                editingGapValue = MAX_GAP_VALUE.toString();
+                gapOverlayValue.textContent = editingGapValue;
+                gapOverlayValue.classList.remove('shake');
+            }, 200);
+        }
+    }
+}
+
 // ============ CLICK SOUND OVERLAY ============
 
 // Open click sound overlay
@@ -857,8 +949,35 @@ function initAudioContext() {
     }
 }
 
+// Check if current beat should be muted by gap trainer
+function shouldMuteForGapTrainer() {
+    if (!isInTechniquePanel) return false;
+    if (!warmupComplete) return false;
+    
+    // Calculate position in the gap+click cycle
+    const cycleLength = gapValue + clickValue;
+    const positionInCycle = gapTrainerBeatCount % cycleLength;
+    
+    // First 'gapValue' beats in cycle are muted
+    return positionInCycle < gapValue;
+}
+
 // Play a click sound
 function playClick(accentLevel) {
+    // Check if this beat should be muted by gap trainer (check BEFORE incrementing)
+    const shouldMute = shouldMuteForGapTrainer();
+    
+    // Increment gap trainer beat count (after warmup)
+    if (isInTechniquePanel && warmupComplete) {
+        gapTrainerBeatCount++;
+    }
+    
+    if (shouldMute) {
+        // Muted - show visual but no sound
+        showBeatFlash(false);
+        return;
+    }
+    
     // Use previewing sound if in preview mode, otherwise use current sound
     const soundToPlay = previewingSound || currentClickSound;
     playClickWithSound(soundToPlay, accentLevel);
@@ -1087,6 +1206,10 @@ function scheduleNextBeat() {
         currentBeat++;
         if (currentBeat > beatsPerMeasure) {
             currentBeat = 1;
+            // Mark warmup as complete after first full measure
+            if (isInTechniquePanel && !warmupComplete) {
+                warmupComplete = true;
+            }
         }
         
         scheduleNextBeat();
@@ -1102,6 +1225,10 @@ function startMetronome() {
         playButtonIcon.src = 'icons/ic_pause.svg';
         playButtonIcon.alt = 'Pause';
     }
+    
+    // Reset gap trainer state
+    gapTrainerBeatCount = 0;
+    warmupComplete = false;
     
     // Warmup: play silent click to initialize audio pipeline
     const warmupOsc = audioContext.createOscillator();
@@ -1265,18 +1392,65 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle physical keyboard input when overlay is open
     document.addEventListener('keydown', (e) => {
-        if (!tempoOverlay.classList.contains('active')) return;
+        // Tempo overlay
+        if (tempoOverlay && tempoOverlay.classList.contains('active')) {
+            if (e.key >= '0' && e.key <= '9') {
+                handleKeyInput(e.key);
+            } else if (e.key === 'Backspace') {
+                handleKeyInput('backspace');
+            } else if (e.key === 'Enter') {
+                handleKeyInput('confirm');
+            } else if (e.key === 'Escape') {
+                closeTempoOverlay(false);
+            }
+            return;
+        }
         
-        if (e.key >= '0' && e.key <= '9') {
-            handleKeyInput(e.key);
-        } else if (e.key === 'Backspace') {
-            handleKeyInput('backspace');
-        } else if (e.key === 'Enter') {
-            handleKeyInput('confirm');
-        } else if (e.key === 'Escape') {
-            closeTempoOverlay(false);
+        // Gap overlay
+        if (gapOverlay && gapOverlay.classList.contains('active')) {
+            if (e.key >= '0' && e.key <= '9') {
+                handleGapKeyInput(e.key);
+            } else if (e.key === 'Backspace') {
+                handleGapKeyInput('backspace');
+            } else if (e.key === 'Enter') {
+                handleGapKeyInput('confirm');
+            } else if (e.key === 'Escape') {
+                closeGapOverlay(false);
+            }
+            return;
         }
     });
+    
+    // ============ GAP OVERLAY ELEMENTS ============
+    
+    gapOverlay = document.getElementById('gapOverlay');
+    gapOverlayValue = document.getElementById('gapOverlayValue');
+    gapOverlayLabel = document.getElementById('gapOverlayLabel');
+    gapKeys = document.querySelectorAll('.gap-key');
+    
+    // Gap interval box clicks
+    const gapIntervalBoxes = document.querySelectorAll('.gap-interval-box');
+    gapIntervalBoxes.forEach((box, index) => {
+        box.addEventListener('click', () => {
+            openGapOverlay(index === 0 ? 'gap' : 'click');
+        });
+    });
+    
+    // Gap keyboard clicks
+    gapKeys.forEach(key => {
+        key.addEventListener('click', () => {
+            handleGapKeyInput(key.dataset.key);
+        });
+    });
+    
+    // Close gap overlay when clicking outside the keyboard
+    if (gapOverlay) {
+        gapOverlay.addEventListener('click', (e) => {
+            if (e.target === gapOverlay || e.target.closest('.gap-overlay-display')) {
+                closeGapOverlay(false);
+            }
+        });
+    }
     
     // ============ CLICK SOUND OVERLAY ELEMENTS ============
     
@@ -1422,10 +1596,14 @@ function switchToPanel(panelIndex) {
     if (panelIndex === 1 && metronomePanel) {
         metronomePanel.classList.add('active');
         buildAccentsGrid();
+        isInTechniquePanel = false;
     } else if (panelIndex === 2 && techniquePanel) {
         techniquePanel.classList.add('active');
+        isInTechniquePanel = true;
+    } else {
+        // panelIndex === 0 means show menu (no detail panel active)
+        isInTechniquePanel = false;
     }
-    // panelIndex === 0 means show menu (no detail panel active)
 }
 
 // ============ ACCENTS ============
