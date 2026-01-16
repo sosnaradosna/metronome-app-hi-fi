@@ -7,6 +7,26 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Splash Screen -->
+    <div class="splash-screen" id="splashScreen">
+        <div class="splash-logo" id="splashLogo">
+            <div class="splash-logo-text">
+                <span>m</span>
+                <span>e</span>
+                <span>t</span>
+                <span>r</span>
+                <span>o</span>
+                <span>n</span>
+                <span>o</span>
+                <span>m</span>
+                <span>e</span>
+            </div>
+            <div class="splash-logo-icon">
+                <img src="icons/ic_metronome.svg" alt="Metronome">
+            </div>
+        </div>
+    </div>
+
     <!-- Toast notification -->
     <div class="toast" id="toast">
         <span class="toast-message">This option is not available in the prototype</span>
@@ -169,7 +189,7 @@
                                 </div>
                                 <div class="gap-interval-box" data-type="click">
                                     <span class="gap-interval-label">click</span>
-                                    <span class="gap-interval-value" id="clickValue">4</span>
+                                    <span class="gap-interval-value" id="clickValue">12</span>
                                 </div>
                             </div>
                         </div>
@@ -185,7 +205,7 @@
                                 </div>
                                 <div class="tempo-interval-box" data-type="interval">
                                     <span class="tempo-interval-label">interval</span>
-                                    <span class="tempo-interval-value" id="intervalValue">12</span>
+                                    <span class="tempo-interval-value" id="intervalValue">4</span>
                                 </div>
                             </div>
                         </div>
@@ -268,8 +288,6 @@
                     <button class="metrum-preset" data-num="5" data-den="4">5 / 4</button>
                     <button class="metrum-preset" data-num="6" data-den="8">6 / 8</button>
                     <button class="metrum-preset" data-num="7" data-den="8">7 / 8</button>
-                    <button class="metrum-preset" data-num="5" data-den="8">5 / 8</button>
-                    <button class="metrum-preset" data-num="9" data-den="8">9 / 8</button>
                 </div>
             </div>
         </div>

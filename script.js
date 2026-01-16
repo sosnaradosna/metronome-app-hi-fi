@@ -1,3 +1,82 @@
+// Splash screen
+function initSplashScreen() {
+    const splashScreen = document.getElementById('splashScreen');
+    const splashLogo = document.getElementById('splashLogo');
+    const splashLogoText = splashScreen ? splashScreen.querySelector('.splash-logo-text') : null;
+    const splashLogoIcon = splashScreen ? splashScreen.querySelector('.splash-logo-icon') : null;
+    const targetLogo = document.querySelector('.logo-container');
+    
+    if (!splashScreen || !splashLogo || !targetLogo) {
+        // If elements don't exist, just hide splash
+        if (splashScreen) splashScreen.classList.add('hidden');
+        return;
+    }
+    
+    // Set initial position using left/bottom so we can animate top/right
+    const screenWidth = window.innerWidth;
+    
+    // Get target position
+    const targetRect = targetLogo.getBoundingClientRect();
+    
+    // Set initial state: full screen, anchored to bottom-left
+    splashScreen.style.left = '0';
+    splashScreen.style.bottom = '0';
+    splashScreen.style.top = '0';
+    splashScreen.style.right = '0';
+    splashScreen.style.width = 'auto';
+    splashScreen.style.height = 'auto';
+    
+    // Flash logo 4 times like metronome beats (at 120 BPM = 500ms per beat)
+    const beatInterval = 500;
+    const flashDuration = 100;
+    
+    function flashLogo() {
+        if (splashLogoText) splashLogoText.classList.add('beat-flash');
+        if (splashLogoIcon) splashLogoIcon.classList.add('beat-flash');
+        
+        setTimeout(() => {
+            if (splashLogoText) splashLogoText.classList.remove('beat-flash');
+            if (splashLogoIcon) splashLogoIcon.classList.remove('beat-flash');
+        }, flashDuration);
+    }
+    
+    // Final state - logo stays bright (matching target logo color)
+    function setFinalState() {
+        if (splashLogoText) {
+            splashLogoText.classList.add('beat-flash');
+            splashLogoText.style.color = 'var(--grey-superlight)';
+        }
+        if (splashLogoIcon) {
+            splashLogoIcon.classList.add('beat-flash');
+            const img = splashLogoIcon.querySelector('img');
+            if (img) img.style.filter = 'invert(1)';
+        }
+    }
+    
+    // Start flashing after 300ms delay
+    setTimeout(() => {
+        flashLogo(); // Beat 1
+        setTimeout(() => flashLogo(), beatInterval); // Beat 2
+        setTimeout(() => flashLogo(), beatInterval * 2); // Beat 3
+        setTimeout(() => setFinalState(), beatInterval * 3); // Beat 4 - stays on
+    }, 300);
+    
+    // After 4 beats (300ms + 4*500ms = 2300ms), animate to position
+    setTimeout(() => {
+        // Add animating class for transitions
+        splashScreen.classList.add('animating');
+        
+        // Animate: shrink from top-right toward bottom-left target
+        splashScreen.style.top = targetRect.top + 'px';
+        splashScreen.style.right = (screenWidth - targetRect.right) + 'px';
+        
+        // Hide splash screen after animation completes
+        setTimeout(() => {
+            splashScreen.classList.add('hidden');
+        }, 950);
+    }, 2300);
+}
+
 // Toast notification
 let toastTimeout = null;
 let highlightTimeout = null;
@@ -186,7 +265,7 @@ let wasPlayingBeforeOverlay = false; // Track if metronome was playing when over
 
 // Gap trainer state
 let gapValue = 4;
-let clickValue = 4;
+let clickValue = 12;
 let editingGapValue = '';
 let editingGapType = 'gap'; // 'gap' or 'click'
 let isFirstGapInput = true;
@@ -200,7 +279,7 @@ let warmupComplete = false; // Whether the warm-up measure is done
 
 // Tempo trainer state
 let jumpValue = 5;
-let intervalValue = 12;
+let intervalValue = 4;
 let currentTechniqueMode = 'gap'; // 'gap', 'tempo', 'polyrhythm'
 let tempoTrainerMeasureCount = 0;
 let tempoTrainerOriginalTempo = 120;
@@ -1548,6 +1627,9 @@ function toggleMetronome() {
 // ============ INITIALIZATION ============
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize splash screen
+    initSplashScreen();
+    
     // Initialize audio context on first user interaction
     const initAudioOnFirstTouch = () => {
         initAudioContext();

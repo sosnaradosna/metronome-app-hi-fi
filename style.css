@@ -46,6 +46,75 @@ a {
     color: inherit;
 }
 
+/* ============ SPLASH SCREEN ============ */
+.splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--black);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.splash-screen.hidden {
+    display: none;
+}
+
+.splash-screen.animating {
+    transition: top 0.9s cubic-bezier(0.4, 0, 0.2, 1),
+                right 0.9s cubic-bezier(0.4, 0, 0.2, 1),
+                width 0.9s cubic-bezier(0.4, 0, 0.2, 1),
+                height 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.splash-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--grey-superlight);
+}
+
+.splash-logo-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 20px;
+    letter-spacing: 2.2px;
+    color: #555550;
+    transition: color 0.15s ease-out;
+}
+
+.splash-logo-text.beat-flash {
+    color: #c9a888;
+    transition: none;
+}
+
+.splash-logo-icon {
+    margin-top: 0;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.splash-logo-icon img {
+    width: 40px;
+    height: 40px;
+    filter: invert(1) brightness(0.4);
+    transition: filter 0.15s ease-out;
+}
+
+.splash-logo-icon.beat-flash img {
+    filter: invert(1) brightness(0.7);
+    transition: none;
+}
+
 /* ============ MAIN LAYOUT ============ */
 .home {
     width: 100%;
@@ -63,12 +132,12 @@ a {
 .metronome-main-settings {
     display: flex;
     flex-direction: column;
-    min-height: 363px;
+    min-height: 323px;
 }
 
 /* Top bar */
 .metrum-tempo-setting {
-    padding: 12px 20px 20px 20px;
+    padding: 12px 20px 12px 20px;
 }
 
 .top-bar-content {
@@ -158,16 +227,33 @@ a {
 .metronome-setting-tempo-play {
     display: flex;
     justify-content: center;
-    padding: 20px 16px 32px 24px;
-    gap: 18px;
+    padding: 12px 20px 20px 20px;
     align-items: flex-start;
 }
 
-/* Left icons menu */
+/* Left icons menu - fixed distance from wheel */
 .metronome-menu {
     display: flex;
     flex-direction: column;
     width: 44px;
+    flex-shrink: 0;
+    margin-right: 18px;
+}
+
+/* Tempo controls wrapper */
+.tempo-controls {
+    display: flex;
+    align-items: flex-end;
+    position: relative;
+}
+
+/* Invisible spacer to balance the metronome-menu width for centering
+   metronome-menu (44px) + margin (18px) = 62px
+   TAP button extends ~42px beyond wheel, so spacer = 62 - 42 = 20px */
+.metronome-setting-tempo-play::after {
+    content: '';
+    width: 20px;
+    flex-shrink: 0;
 }
 
 .trigger-icon {
@@ -184,16 +270,9 @@ a {
     height: 24px;
 }
 
-/* Tempo controls wrapper */
-.tempo-controls {
-    display: flex;
-    align-items: flex-end;
-    position: relative;
-}
-
 /* Tempo wheel container */
 .tempo-wheel-container {
-    padding-bottom: 44px;
+    padding-bottom: 32px;
     z-index: 2;
     position: relative;
 }
@@ -346,7 +425,7 @@ button.trigger-play img {
 /* ============ BOTTOM MENU SECTION ============ */
 .bottom-panel-slider {
     flex: 1;
-    min-height: 397px;
+    min-height: 320px;
     overflow: hidden;
     position: relative;
 }
@@ -400,13 +479,13 @@ button.trigger-play img {
 
 /* Logo sidebar */
 .logo-container {
-    width: 90px;
+    width: 80px;
     background-color: var(--black);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 4px 0 0 0;
+    padding: 0;
     overflow: hidden;
 }
 
@@ -415,22 +494,22 @@ button.trigger-play img {
     flex-direction: column;
     align-items: center;
     color: var(--grey-superlight);
-    font-size: 24px;
-    letter-spacing: 2.64px;
+    font-size: 20px;
+    letter-spacing: 2.2px;
 }
 
 .logo-icon {
     margin-top: 0px;
-    width: 72px;
-    height: 72px;
+    width: 56px;
+    height: 56px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .logo-icon img {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     filter: invert(1);
 }
 
@@ -438,7 +517,7 @@ button.trigger-play img {
 .panel-metronome {
     display: flex;
     flex-direction: column;
-    padding: 32px;
+    padding: 24px;
     overflow: hidden;
 }
 
@@ -446,7 +525,7 @@ button.trigger-play img {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .panel-header-left {
@@ -561,7 +640,7 @@ button.trigger-play img {
     display: flex;
     justify-content: center;
     gap: 0;
-    margin-top: 16px;
+    margin-top: 12px;
 }
 
 .category-btn {
@@ -583,7 +662,7 @@ button.trigger-play img {
 .panel-technique {
     display: flex;
     flex-direction: column;
-    padding: 32px;
+    padding: 24px;
     overflow: hidden;
     position: relative;
 }
@@ -874,9 +953,9 @@ button.trigger-play img {
 }
 
 .nav-tab {
-    padding: 16px 12px;
-    font-size: 24px;
-    letter-spacing: 2.64px;
+    padding: 10px 12px;
+    font-size: 20px;
+    letter-spacing: 2.2px;
     cursor: pointer;
 }
 
@@ -1152,11 +1231,10 @@ button.trigger-play img {
 /* Metrum Presets Section */
 .metrum-presets {
     background-color: var(--grey-superlight);
-    padding: 20px;
-    padding-bottom: 40px;
+    padding: 24px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     flex: 1;
 }
 
@@ -1273,11 +1351,10 @@ button.trigger-play img {
 
 .click-sound-bottom-sheet {
     background-color: var(--grey-superlight);
-    padding: 20px;
-    padding-bottom: 40px;
+    padding: 24px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 
 .click-sound-header {
